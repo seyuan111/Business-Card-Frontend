@@ -108,7 +108,7 @@ const CreateBooks = () => {
               },
             ].map((field, index) => (
               <div key={index} className="flex flex-col">
-                <label className="text-gray-600 text-sm font-medium">{field.label}</label>
+                <label className="text-gray-400 text-sm font-medium">{field.label}</label>
                 <input
                   type="text"
                   value={field.label === 'Contact' ? contact : field.value}
