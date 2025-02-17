@@ -14,7 +14,7 @@ const Login = () => {
     <div className="w-full flex flex-col justify-center items-center min-h-screen relative p-4">
 
       {/* Login Box */}
-      <div className="bg-neutral-700 mt-20 p-6 md:p-10 rounded-lg shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg mx-auto relative">
+      <div className="bg-neutral-500 mt-20 p-6 md:p-10 rounded-lg shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg mx-auto relative">
         <h2 className="text-3xl font-bold text-center text-white mb-6">Log in</h2>
 
         {/* Form */}

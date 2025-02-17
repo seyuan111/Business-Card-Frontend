@@ -36,7 +36,7 @@ const Reviews = () => {
   ];
 
   return (
-    <div className="py-16 bg-neutral-400">
+    <div className="py-16 bg-neutral-200">
       <h2 className="text-center text-3xl sm:text-4xl font-bold mb-8">User Reviews</h2>
 
       <Swiper
