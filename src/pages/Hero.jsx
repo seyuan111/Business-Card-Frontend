@@ -33,13 +33,13 @@ const Hero = () => {
         <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
           <Link
             to="/Home"
-            className="bg-gradient-to-r from-blue-600 to-blue-800 py-3 px-6 rounded-lg text-white font-semibold shadow-lg hover:shadow-xl transition duration-300 ease-in-out transform hover:scale-105"
+            className="bg-gradient-to-r from-blue-500 to-blue-800 py-3 px-6 rounded-lg text-white font-semibold shadow-lg hover:shadow-xl transition duration-300 ease-in-out transform hover:scale-105"
           >
             View Cards
           </Link>
           <Link
             to="/about"
-            className="bg-transparent py-3 px-6 rounded-lg border-2 border-blue-600 text-blue-600 font-semibold hover:bg-blue-600 hover:text-white transition duration-300 ease-in-out transform hover:scale-105"
+            className="bg-transparent py-3 px-6 rounded-lg border-2 border-blue-500 text-blue-600 font-semibold hover:bg-blue-600 hover:text-white transition duration-300 ease-in-out transform hover:scale-105"
           >
             FAQ
           </Link>

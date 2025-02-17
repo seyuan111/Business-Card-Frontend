@@ -104,7 +104,7 @@ const CreateBooks = () => {
                 label: 'Contact', 
                 value: contact, 
                 setter: setContact, 
-                helperText: 'Format: (111) 222-5555' // Added helper text
+                helperText: 'Format: (123) 222-5555' // Added helper text
               },
             ].map((field, index) => (
               <div key={index} className="flex flex-col">

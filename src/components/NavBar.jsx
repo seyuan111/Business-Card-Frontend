@@ -12,7 +12,7 @@ const NavBar = () => {
   };
 
   return (
-    <div className="w-full h-[70px] border-b-2 bg-neutral-600 sticky top-0 z-10 shadow-lg">
+    <div className="w-full h-[70px] border-b-2 bg-neutral-800 sticky top-0 z-10 shadow-lg">
       <div className="max-w-[1240px] mx-auto flex justify-between items-center h-full px-4 py-4">
         
         {/* Logo Section */}

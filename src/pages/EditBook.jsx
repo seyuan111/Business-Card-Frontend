@@ -121,7 +121,7 @@ const EditBook = () => {
                 label: 'Contact', 
                 value: contact, 
                 setter: setContact, 
-                helperText: 'Format: (111) 222-5555' 
+                helperText: 'Format: (123) 222-5555' 
               },
             ].map((field, index) => (
               <div key={index} className="flex flex-col">

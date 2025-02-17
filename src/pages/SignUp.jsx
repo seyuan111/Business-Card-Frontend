@@ -16,7 +16,7 @@ const Signup = () => {
       <div className="w-full flex flex-col justify-center items-center min-h-screen relative p-4">
 
         {/* Signup Form */}
-        <div className="bg-neutral-600 mt-20 p-6 md:p-10 rounded-lg shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg mx-auto relative">
+        <div className="bg-neutral-700 mt-20 p-6 md:p-10 rounded-lg shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg mx-auto relative">
           {/* Back Button */}
           <BiArrowBack
             onClick={() => navigate(-1)}

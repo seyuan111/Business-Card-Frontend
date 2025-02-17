@@ -59,7 +59,7 @@ const BooksTable = ({ cards }) => {
                 <td className='border border-slate-700 px-4 py-2 text-center'>
                   <div className='flex justify-center gap-3'>
                     <Link to={`/cards/details/${card._id}`}>
-                      <BsInfoCircle className='text-2xl text-green-800 hover:scale-110 transition' />
+                      <BsInfoCircle className='text-2xl text-green-700 hover:scale-110 transition' />
                     </Link>
                     <Link to={`/cards/edit/${card._id}`}>
                       <AiOutlineEdit className='text-2xl text-yellow-600 hover:scale-110 transition' />
