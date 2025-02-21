@@ -8,7 +8,7 @@ import DeleteBook from './pages/DeleteBook';
 import Hero from './pages/Hero';
 import About from './pages/About';
 import Login from './pages/Login';
-import SignUp from './pages/SignUp'
+import SignUp from './pages/SignUp';
 
 const App = () => {
   return (

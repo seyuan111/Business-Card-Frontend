@@ -55,7 +55,7 @@ const EditBook = () => {
 
   const handleEditBook = () => {
     // Validate if all fields are filled out
-    if (!name || !address || !email || !occupation || !contact) {
+    if (!name || !email || !contact) {
       enqueueSnackbar('Please fill out all required fields', { variant: 'error' });
       return;
     }
@@ -121,7 +121,7 @@ const EditBook = () => {
                 label: 'Contact', 
                 value: contact, 
                 setter: setContact, 
-                helperText: 'Format: (123) 222-5555' 
+                helperText: 'Format: (111) 222-5555' 
               },
             ].map((field, index) => (
               <div key={index} className="flex flex-col">

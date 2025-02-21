@@ -44,7 +44,7 @@ const About = () => {
 
           {/* Our Team */}
           <div className="about-section bg-white rounded-lg shadow-xl p-6 hover:transform hover:scale-105 transition-transform duration-300">
-            <h2 className="text-2xl font-semibold text-blue-700 mb-4">Our Team</h2>
+            <h2 className="text-2xl font-semibold text-blue-600 mb-4">Our Team</h2>
             <p className="text-neutral-600">
               We build this app to allow users to punch in business info and keep safe even after losing the business cards.
             </p>

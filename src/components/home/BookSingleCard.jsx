@@ -11,7 +11,7 @@ const BookSingleCard = ({ card }) => {
   const [showModal, setShowModal] = useState(false);
 
   return (
-    <div className='border-2 border-gray-600 rounded-lg px-4 py-2 m-4 md:w-full relative hover:shadow-xl'>
+    <div className='border-2 border-gray-500 rounded-lg px-4 py-2 m-4 md:w-full relative hover:shadow-xl'>
       <h2 className='absolute top-1 right-2 px-4 py-1 bg-red-300 rounded-lg'>
         {card.contact}
       </h2>

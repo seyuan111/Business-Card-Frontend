@@ -6,7 +6,7 @@ const BackButton = ({ destination = '/Home' }) => {
     <div className='flex'>
       <Link
         to={destination}
-        className='bg-sky-700 text-white px-2 py-1 rounded-lg w-fit'
+        className='bg-sky-800 text-white px-2 py-1 rounded-lg w-fit'
       >
         <BsArrowLeft className='text-2xl' />
       </Link>

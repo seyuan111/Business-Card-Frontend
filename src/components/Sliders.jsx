@@ -43,7 +43,7 @@ const Sliders = () => {
   return (
     <div className="bg-neutral-400">
         
-        <div className="max-w-[700px] h-[500px] w-full m-auto py-14 px-4 relative group">
+        <div className="max-w-[700px] h-[500px] w-full m-auto py-16 px-4 relative group">
             <div style={{backgroundImage: `url(${slides[current].url})`}} className="w-full h-full rounded-2xl bg-center bg-cover duration-300 brightness-50"></div>
             
             <div onClick={prevSlide} className="text-white cursor-pointer absolute top-[50%] transition-x-0 transition-y-[50%] left-10">

@@ -38,7 +38,7 @@ const CreateBooks = () => {
   };
 
   const handleSaveBook = () => {
-    if (!name || !address || !email || !occupation || !contact) {
+    if (!name || !email || !contact) {
       enqueueSnackbar('Please fill out all required fields', { variant: 'error' });
       return;
     }
@@ -104,7 +104,7 @@ const CreateBooks = () => {
                 label: 'Contact', 
                 value: contact, 
                 setter: setContact, 
-                helperText: 'Format: (123) 222-5555' // Added helper text
+                helperText: 'Format: (111) 222-5555' // Added helper text
               },
             ].map((field, index) => (
               <div key={index} className="flex flex-col">
