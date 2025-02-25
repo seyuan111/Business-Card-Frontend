@@ -9,6 +9,7 @@ import { useSnackbar } from 'notistack';
 const BooksTable = ({ cards }) => {
   const [selectedCard, setSelectedCard] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState('');
   const { enqueueSnackbar } = useSnackbar();
 
   const handleDeleteCard = async () => {
@@ -27,96 +28,127 @@ const BooksTable = ({ cards }) => {
     }
   };
 
+  // Filter cards based on the search input
+  const filteredCards = cards.filter((card) =>
+    card.name.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <div className='w-full'>
+    <div className="w-full p-4">
+      {/* Search Bar */}
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search by name..."
+          className="w-full p-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+
       {/* Table for larger screens */}
-      <div className='hidden md:block'>
-        <table className='w-full border-collapse border border-slate-600'>
+      <div className="hidden md:block">
+        <table className="w-full border-collapse border border-slate-600">
           <thead>
-            <tr className='bg-gray-200'>
-              <th className='border border-slate-600 px-4 py-2'>No</th>
-              <th className='border border-slate-600 px-4 py-2'>Name</th>
-              <th className='border border-slate-600 px-4 py-2'>Email</th>
-              <th className='border border-slate-600 px-4 py-2'>Contact</th>
-              <th className='border border-slate-600 px-4 py-2'>Actions</th>
+            <tr className="bg-gray-200">
+              <th className="border border-slate-600 px-4 py-2">No</th>
+              <th className="border border-slate-600 px-4 py-2">Name</th>
+              <th className="border border-slate-600 px-4 py-2">Email</th>
+              <th className="border border-slate-600 px-4 py-2">Contact</th>
+              <th className="border border-slate-600 px-4 py-2">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {cards.map((card, index) => (
-              <tr key={card._id} className='hover:bg-gray-100 transition'>
-                <td className='border border-slate-700 px-4 py-2 text-center'>
-                  {index + 1}
-                </td>
-                <td className='border border-slate-700 px-4 py-2 text-center'>
-                  {card.name}
-                </td>
-                <td className='border border-slate-700 px-4 py-2 text-center'>
-                  {card.email}
-                </td>
-                <td className='border border-slate-700 px-4 py-2 text-center'>
-                  {card.contact}
-                </td>
-                <td className='border border-slate-700 px-4 py-2 text-center'>
-                  <div className='flex justify-center gap-3'>
-                    <Link to={`/cards/details/${card._id}`}>
-                      <BsInfoCircle className='text-2xl text-green-800 hover:scale-110 transition' />
-                    </Link>
-                    <Link to={`/cards/edit/${card._id}`}>
-                      <AiOutlineEdit className='text-2xl text-yellow-600 hover:scale-110 transition' />
-                    </Link>
-                    <button onClick={() => setSelectedCard(card)}>
-                      <MdOutlineDelete className='text-2xl text-red-600 hover:scale-110 transition' />
-                    </button>
-                  </div>
+            {filteredCards.length > 0 ? (
+              filteredCards.map((card, index) => (
+                <tr key={card._id} className="hover:bg-gray-100 transition">
+                  <td className="border border-slate-700 px-4 py-2 text-center">
+                    {index + 1}
+                  </td>
+                  <td className="border border-slate-700 px-4 py-2 text-center">
+                    {card.name}
+                  </td>
+                  <td className="border border-slate-700 px-4 py-2 text-center">
+                    {card.email}
+                  </td>
+                  <td className="border border-slate-700 px-4 py-2 text-center">
+                    {card.contact}
+                  </td>
+                  <td className="border border-slate-700 px-4 py-2 text-center">
+                    <div className="flex justify-center gap-3">
+                      <Link to={`/cards/details/${card._id}`}>
+                        <BsInfoCircle className="text-2xl text-green-800 hover:scale-110 transition" />
+                      </Link>
+                      <Link to={`/cards/edit/${card._id}`}>
+                        <AiOutlineEdit className="text-2xl text-yellow-600 hover:scale-110 transition" />
+                      </Link>
+                      <button onClick={() => setSelectedCard(card)}>
+                        <MdOutlineDelete className="text-2xl text-red-600 hover:scale-110 transition" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="5" className="text-center text-gray-500 py-4">
+                  No matching results found.
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
 
       {/* Card-based design for mobile screens */}
-      <div className='md:hidden space-y-4'>
-        {cards.map((card, index) => (
-          <div
-            key={card._id}
-            className='border border-gray-300 rounded-lg shadow-md p-4 bg-white'
-          >
-            <div className='flex justify-between'>
-              <span className='font-semibold text-gray-700'>#{index + 1}</span>
-              <div className='flex gap-3'>
-                <Link to={`/cards/details/${card._id}`}>
-                  <BsInfoCircle className='text-xl text-green-800 hover:scale-110 transition' />
-                </Link>
-                <Link to={`/cards/edit/${card._id}`}>
-                  <AiOutlineEdit className='text-xl text-yellow-600 hover:scale-110 transition' />
-                </Link>
-                <button onClick={() => setSelectedCard(card)}>
-                  <MdOutlineDelete className='text-xl text-red-600 hover:scale-110 transition' />
-                </button>
+      <div className="md:hidden space-y-4">
+        {filteredCards.length > 0 ? (
+          filteredCards.map((card, index) => (
+            <div
+              key={card._id}
+              className="border border-gray-300 rounded-lg shadow-md p-4 bg-white"
+            >
+              <div className="flex justify-between">
+                <span className="font-semibold text-gray-700">#{index + 1}</span>
+                <div className="flex gap-3">
+                  <Link to={`/cards/details/${card._id}`}>
+                    <BsInfoCircle className="text-xl text-green-800 hover:scale-110 transition" />
+                  </Link>
+                  <Link to={`/cards/edit/${card._id}`}>
+                    <AiOutlineEdit className="text-xl text-yellow-600 hover:scale-110 transition" />
+                  </Link>
+                  <button onClick={() => setSelectedCard(card)}>
+                    <MdOutlineDelete className="text-xl text-red-600 hover:scale-110 transition" />
+                  </button>
+                </div>
+              </div>
+              <div className="mt-2">
+                <p className="text-lg font-bold">{card.name}</p>
+                <p className="text-sm text-gray-600">{card.email}</p>
+                <p className="text-sm text-gray-600">{card.contact}</p>
               </div>
             </div>
-            <div className='mt-2'>
-              <p className='text-lg font-bold'>{card.name}</p>
-              <p className='text-sm text-gray-600'>{card.email}</p>
-              <p className='text-sm text-gray-600'>{card.contact}</p>
-            </div>
-          </div>
-        ))}
+          ))
+        ) : (
+          <p className="text-center text-gray-500 py-4">
+            No matching results found.
+          </p>
+        )}
       </div>
 
       {/* Sidebar for Deleting Confirmation */}
       {selectedCard && (
-        <div className='fixed inset-0 bg-black bg-opacity-50 flex justify-end'>
-          <div className='w-80 bg-white shadow-lg p-6 flex flex-col justify-center'>
-            <h2 className='text-xl font-bold text-gray-700'>Confirm Delete</h2>
-            <p className='text-sm text-gray-600 mt-2'>
-              Are you sure you want to delete <span className='font-semibold'>{selectedCard.name}</span>?
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-end">
+          <div className="w-80 bg-white shadow-lg p-6 flex flex-col justify-center">
+            <h2 className="text-xl font-bold text-gray-700">Confirm Delete</h2>
+            <p className="text-sm text-gray-600 mt-2">
+              Are you sure you want to delete{' '}
+              <span className="font-semibold">{selectedCard.name}</span>?
             </p>
-            <div className='flex justify-between mt-6'>
+            <div className="flex justify-between mt-6">
               <button
                 onClick={() => setSelectedCard(null)}
-                className='px-4 py-2 bg-gray-300 text-gray-800 rounded-md'
+                className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md"
               >
                 Cancel
               </button>

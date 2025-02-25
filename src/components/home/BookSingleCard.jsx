@@ -3,7 +3,7 @@ import { PiBookOpenTextLight } from 'react-icons/pi';
 import { BiUserCircle, BiShow } from 'react-icons/bi';
 import { AiOutlineEdit } from 'react-icons/ai';
 import { BsInfoCircle } from 'react-icons/bs';
-import { MdOutlineDelete } from 'react-icons/md';
+import { MdOutlineDelete, MdEmail } from 'react-icons/md';
 import { useState } from 'react';
 import BookModal from './BookModal';
 
@@ -24,7 +24,7 @@ const BookSingleCard = ({ card }) => {
         <h2 className='my-1'>{card.address}</h2>
       </div>
       <div className='flex justify-start items-center gap-x-2'>
-        <BiUserCircle className='text-red-300 text-2xl' />
+        <MdEmail className='text-red-300 text-2xl' />
         <h2 className='my-1'>{card.email}</h2>
       </div>
       <div className='flex justify-between items-center gap-x-2 mt-4 p-4'>
