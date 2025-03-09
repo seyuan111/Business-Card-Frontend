@@ -10,57 +10,53 @@ const Signup = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   return (
-    <div className="w-full min-h-screen flex flex-col bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+    <div className="w-full min-h-screen flex flex-col bg-gradient-to-br from-[#e6f0fa] via-[#f9e6f0] to-[#e6f0fa] text-gray-700">
       {/* Navbar */}
       <NavBar />
 
-      {/* Main Content */}
+      {/* Centered Content */}
       <div className="flex flex-col justify-center items-center min-h-screen p-6">
-        <div className="w-full max-w-md bg-white/10 backdrop-blur-lg p-8 rounded-xl shadow-2xl border border-white/20 relative">
-          
+        <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-lg border border-gray-200 relative">
           {/* Back Button */}
-          <button onClick={() => navigate(-1)} className="absolute top-4 left-4 text-white hover:text-gray-400 transition">
+          <button
+            onClick={() => navigate(-1)}
+            className="absolute top-4 left-4 text-gray-600 hover:text-gray-800 transition"
+          >
             <BiArrowBack size={24} />
           </button>
 
-          {/* Title */}
-          <h2 className="text-4xl font-bold text-center mb-6">Create an Account</h2>
+          {/* Logo */}
+          <div className="flex justify-center mb-6">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-600 mt-2">Sign In to Card-Ology</h2>
+            </div>
+          </div>
 
           {/* Signup Form */}
-          <form className="space-y-6">
-            {/* Email Input */}
+          <form className="space-y-4">
+            {/* Username or Email Input */}
             <div className="flex flex-col">
-              <label className="font-medium">Email</label>
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="border border-white/30 bg-white/20 p-3 w-full rounded-lg focus:ring-2 focus:ring-blue-500 text-black"
-              />
-            </div>
-
-            {/* Username Input */}
-            <div className="flex flex-col">
-              <label className="font-medium">Username</label>
+              <label className="text-sm font-medium text-gray-600">Username or Email Address</label>
               <input
                 type="text"
-                placeholder="Enter your username"
-                className="border border-white/30 bg-white/20 p-3 w-full rounded-lg focus:ring-2 focus:ring-blue-500 text-black"
+                placeholder="Enter your username or email"
+                className="border border-gray-300 bg-white p-3 w-full rounded-lg focus:ring-2 focus:ring-[#e63946] text-black"
               />
             </div>
 
             {/* Password Input */}
             <div className="flex flex-col">
-              <label className="font-medium">Password</label>
+              <label className="text-sm font-medium text-gray-600">Password</label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
-                  className="border border-white/30 bg-white/20 p-3 w-full rounded-lg focus:ring-2 focus:ring-blue-500 text-black"
+                  className="border border-gray-300 bg-white p-3 w-full rounded-lg focus:ring-2 focus:ring-[#e63946] text-black"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
                   {showPassword ? "👁️" : "👁️‍🗨️"}
                 </button>
@@ -69,17 +65,17 @@ const Signup = () => {
 
             {/* Confirm Password Input */}
             <div className="flex flex-col">
-              <label className="font-medium">Confirm Password</label>
+              <label className="text-sm font-medium text-gray-600">Confirm Password</label>
               <div className="relative">
                 <input
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm your password"
-                  className="border border-white/30 bg-white/20 p-3 w-full rounded-lg focus:ring-2 focus:ring-blue-500 text-black"
+                  className="border border-gray-300 bg-white p-3 w-full rounded-lg focus:ring-2 focus:ring-[#e63946] text-black"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
                   {showConfirmPassword ? "👁️" : "👁️‍🗨️"}
                 </button>
@@ -87,20 +83,23 @@ const Signup = () => {
             </div>
 
             {/* Sign Up Button */}
-            <button className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-lg font-semibold transition shadow-md">
+            <button
+              type="submit"
+              className="w-full py-3 bg-[#e63946] hover:bg-[#d62828] text-white rounded-lg text-lg font-semibold transition shadow-md"
+            >
               Sign Up
             </button>
-          </form>
 
-          {/* Login Link */}
-          <div className="text-center mt-6">
-            <p>
-              Already have an account?{" "}
-              <Link to="/login" className="text-blue-400 font-medium hover:underline">
-                Log in
-              </Link>
-            </p>
-          </div>
+            {/* Login Link */}
+            <div className="text-center mt-4">
+              <p className="text-sm text-gray-600">
+                Already have an account?{" "}
+                <Link to="/login" className="text-[#e63946] font-medium hover:underline">
+                  Log in
+                </Link>
+              </p>
+            </div>
+          </form>
         </div>
       </div>
     </div>
