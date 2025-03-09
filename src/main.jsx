@@ -1,25 +1,17 @@
+// src/index.js
 import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App.jsx';
-import './index.css';
+import ReactDOM from 'react-dom';
 import { BrowserRouter } from 'react-router-dom';
-import { SnackbarProvider } from 'notistack';
+import { AuthProvider } from './context/AuthContext';
+import App from './App';
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <BrowserRouter>
-    <SnackbarProvider>
-      <App />
-    </SnackbarProvider>
-  </BrowserRouter>
+ReactDOM.render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </BrowserRouter>
+  </React.StrictMode>,
+  document.getElementById('root')
 );
-
-
-// ReactDOM.createRoot(document.getElementById('root')).render(
-//   <React.StrictMode>
-//     <BrowserRouter>
-//       <SnackbarProvider>
-//         <App />
-//       </SnackbarProvider>
-//     </BrowserRouter>
-//   </React.StrictMode>
-// );
