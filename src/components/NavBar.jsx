@@ -1,57 +1,154 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AiOutlineMenu, AiOutlineClose } from 'react-icons/ai';
-import { CiCreditCard1 } from "react-icons/ci";
+import { CiCreditCard1 } from 'react-icons/ci';
+import { motion, AnimatePresence } from 'framer-motion'; // Added for animations
 import 'tailwindcss/tailwind.css';
 
 const NavBar = () => {
   const [nav, setNav] = useState(false);
-  
+
   const handleNav = () => {
     setNav(!nav);
   };
 
+  // Animation variants for mobile menu
+  const mobileMenuVariants = {
+    open: {
+      x: 0,
+      opacity: 1,
+      transition: { duration: 0.3, ease: 'easeOut' },
+    },
+    closed: {
+      x: '-100%',
+      opacity: 0,
+      transition: { duration: 0.3, ease: 'easeIn' },
+    },
+  };
+
   return (
-    <div className="w-full h-[70px] border-b-2 bg-neutral-600 sticky top-0 z-10 shadow-lg">
-      <div className="max-w-[1240px] mx-auto flex justify-between items-center h-full px-4 py-4">
-        
+    <nav className="w-full h-[80px] bg-gradient-to-r from-neutral-800 to-neutral-700 sticky top-0 z-50 shadow-lg">
+      <div className="max-w-7xl mx-auto flex justify-between items-center h-full px-4 sm:px-6">
         {/* Logo Section */}
-        <div className="flex items-center text-white cursor-pointer">
-          <CiCreditCard1 className="mr-2 text-3xl text-white" />
-          <h1 className="text-xl font-semibold">
-            <Link to="/">Ology</Link>
-          </h1>
+        <div className="flex items-center">
+          <Link to="/" className="flex items-center space-x-2 group">
+            <CiCreditCard1 className="text-3xl text-white group-hover:text-blue-300 transition-colors" />
+            <h1 className="text-2xl font-bold text-white group-hover:text-blue-300 transition-colors">
+              Ology
+            </h1>
+          </Link>
         </div>
 
         {/* Desktop Menu */}
-        <div className="hidden md:flex space-x-6 text-white">
-          <Link to="/" className="font-medium text-lg hover:text-gray-300">Home</Link>
-          <Link to="/Home" className="font-medium text-lg hover:text-gray-300">View Cards</Link>
-          <Link to="/cards/create" className="font-medium text-lg hover:text-gray-300">Add Card</Link>
-          <Link to="/Login" className="font-medium text-lg hover:text-gray-300">Login</Link>
+        <div className="hidden md:flex items-center space-x-8">
+          <Link
+            to="/"
+            className="text-white text-lg font-medium hover:text-blue-300 transition-colors duration-200"
+          >
+            Home
+          </Link>
+          <Link
+            to="/Home"
+            className="text-white text-lg font-medium hover:text-blue-300 transition-colors duration-200"
+          >
+            View Cards
+          </Link>
+          <Link
+            to="/cards/create"
+            className="text-white text-lg font-medium hover:text-blue-300 transition-colors duration-200"
+          >
+            Add Card
+          </Link>
+          <Link
+            to="/Login"
+            className="text-white text-lg font-medium hover:text-blue-300 transition-colors duration-200"
+          >
+            Login
+          </Link>
         </div>
 
         {/* Mobile Menu Button */}
-        <div onClick={handleNav} className="block md:hidden z-10 cursor-pointer">
+        <button
+          onClick={handleNav}
+          className="md:hidden text-white focus:outline-none"
+          aria-label={nav ? 'Close menu' : 'Open menu'}
+        >
           {nav ? (
-            <AiOutlineClose size={30} className="text-white" />
+            <AiOutlineClose size={28} className="text-white" />
           ) : (
-            <AiOutlineMenu size={30} className="text-white" />
+            <AiOutlineMenu size={28} className="text-white" />
           )}
-        </div>
+        </button>
 
         {/* Mobile Menu */}
-        <div className={nav ? "absolute left-0 top-0 w-full h-screen bg-neutral-800 flex justify-center items-center transition-all duration-300" : "absolute left-[-100%] top-0 w-full h-screen bg-neutral-800 bg-opacity-80 flex justify-center items-center transition-all duration-300"}>
-          <ul className="text-white text-xl space-y-6">
-            <li><Link to="/" className="font-medium" onClick={handleNav}>Home</Link></li>
-            <li><Link to="/Home" className="font-medium" onClick={handleNav}>View Cards</Link></li>
-            <li><Link to="/cards/create" className="font-medium" onClick={handleNav}>Add Card</Link></li>
-            <li><Link to="/Login" className="font-medium" onClick={handleNav}>Login</Link></li>
-          </ul>
-        </div>
-
+        <AnimatePresence>
+          {nav && (
+            <motion.div
+              className="fixed inset-0 bg-neutral-900 bg-opacity-95 flex justify-center items-center md:hidden z-40"
+              initial="closed"
+              animate="open"
+              exit="closed"
+              variants={mobileMenuVariants}
+            >
+              <ul className="text-center space-y-8">
+                <motion.li
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <Link
+                    to="/"
+                    className="text-white text-2xl font-medium hover:text-blue-300 transition-colors"
+                    onClick={handleNav}
+                  >
+                    Home
+                  </Link>
+                </motion.li>
+                <motion.li
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <Link
+                    to="/Home"
+                    className="text-white text-2xl font-medium hover:text-blue-300 transition-colors"
+                    onClick={handleNav}
+                  >
+                    View Cards
+                  </Link>
+                </motion.li>
+                <motion.li
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <Link
+                    to="/cards/create"
+                    className="text-white text-2xl font-medium hover:text-blue-300 transition-colors"
+                    onClick={handleNav}
+                  >
+                    Add Card
+                  </Link>
+                </motion.li>
+                <motion.li
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <Link
+                    to="/Login"
+                    className="text-white text-2xl font-medium hover:text-blue-300 transition-colors"
+                    onClick={handleNav}
+                  >
+                    Login
+                  </Link>
+                </motion.li>
+              </ul>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-    </div>
+    </nav>
   );
 };
 

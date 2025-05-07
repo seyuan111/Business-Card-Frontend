@@ -11,37 +11,72 @@ const BookSingleCard = ({ card }) => {
   const [showModal, setShowModal] = useState(false);
 
   return (
-    <div className='border-2 border-gray-500 rounded-lg px-4 py-2 m-4 md:w-full relative hover:shadow-xl'>
-      <h2 className='absolute top-1 right-2 px-4 py-1 bg-red-300 rounded-lg'>
+    <div className="relative bg-white rounded-xl shadow-lg border border-gray-200 m-4 p-4 sm:p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 w-full max-w-md mx-auto">
+      {/* Contact Badge */}
+      <span className="absolute top-3 right-3 px-3 py-1 bg-red-100 text-red-800 text-sm font-medium rounded-full">
         {card.contact}
-      </h2>
-      <div className='flex justify-start items-center gap-x-2'>
-        <PiBookOpenTextLight className='text-red-300 text-2xl' />
-        <h2 className='my-1'>{card.name}</h2>
+      </span>
+
+      {/* Card Content */}
+      <div className="space-y-3">
+        {/* Name Section */}
+        <div className="flex items-center gap-3">
+          <PiBookOpenTextLight className="text-red-500 text-2xl flex-shrink-0" />
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-800 truncate">
+            {card.name}
+          </h2>
+        </div>
+
+        {/* Address Section */}
+        <div className="flex items-center gap-3">
+          <BiUserCircle className="text-red-500 text-2xl flex-shrink-0" />
+          <p className="text-sm sm:text-base text-gray-600 truncate">
+            {card.address}
+          </p>
+        </div>
+
+        {/* Email Section */}
+        <div className="flex items-center gap-3">
+          <MdEmail className="text-red-500 text-2xl flex-shrink-0" />
+          <p className="text-sm sm:text-base text-gray-600 truncate">
+            {card.email}
+          </p>
+        </div>
       </div>
-      <div className='flex justify-start items-center gap-x-2'>
-        <BiUserCircle className='text-red-300 text-2xl' />
-        <h2 className='my-1'>{card.address}</h2>
-      </div>
-      <div className='flex justify-start items-center gap-x-2'>
-        <MdEmail className='text-red-300 text-2xl' />
-        <h2 className='my-1'>{card.email}</h2>
-      </div>
-      <div className='flex justify-between items-center gap-x-2 mt-4 p-4'>
-        <BiShow
-          className='text-3xl text-blue-800 hover:text-black cursor-pointer'
+
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-3 mt-4">
+        <button
           onClick={() => setShowModal(true)}
-        />
-        <Link to={`/cards/details/${card._id}`}>
-          <BsInfoCircle className='text-2xl text-green-800 hover:text-black' />
+          className="group p-2 rounded-full hover:bg-blue-100 transition-colors"
+          aria-label="Show details"
+        >
+          <BiShow className="text-xl text-blue-600 group-hover:text-blue-800 group-hover:scale-110 transition-transform" />
+        </button>
+        <Link
+          to={`/cards/details/${card._id}`}
+          className="group p-2 rounded-full hover:bg-green-100 transition-colors"
+          aria-label="View details"
+        >
+          <BsInfoCircle className="text-xl text-green-600 group-hover:text-green-800 group-hover:scale-110 transition-transform" />
         </Link>
-        <Link to={`/cards/edit/${card._id}`}>
-          <AiOutlineEdit className='text-2xl text-yellow-600 hover:text-black' />
+        <Link
+          to={`/cards/edit/${card._id}`}
+          className="group p-2 rounded-full hover:bg-yellow-100 transition-colors"
+          aria-label="Edit card"
+        >
+          <AiOutlineEdit className="text-xl text-yellow-600 group-hover:text-yellow-800 group-hover:scale-110 transition-transform" />
         </Link>
-        <Link to={`/cards/delete/${card._id}`}>
-          <MdOutlineDelete className='text-2xl text-red-600 hover:text-black' />
+        <Link
+          to={`/cards/delete/${card._id}`}
+          className="group p-2 rounded-full hover:bg-red-100 transition-colors"
+          aria-label="Delete card"
+        >
+          <MdOutlineDelete className="text-xl text-red-600 group-hover:text-red-800 group-hover:scale-110 transition-transform" />
         </Link>
       </div>
+
+      {/* Modal */}
       {showModal && (
         <BookModal card={card} onClose={() => setShowModal(false)} />
       )}
