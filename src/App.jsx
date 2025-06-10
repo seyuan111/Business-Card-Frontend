@@ -9,6 +9,7 @@ import Hero from './pages/Hero';
 import About from './pages/About';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
+import ForgotPassword from './pages/ForgotPassword'
 
 const App = () => {
   return (
@@ -22,6 +23,7 @@ const App = () => {
       <Route path='/cards/details/:id' element={<ShowBook />} />
       <Route path='/cards/edit/:id' element={<EditBook />} />
       <Route path='/cards/delete/:id' element={<DeleteBook />} />
+      <Route path="/forgot-password" element={<ForgotPassword />}></Route>
     </Routes>
   );
 };

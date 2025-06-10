@@ -8,6 +8,7 @@ import NavBar from "../components/NavBar";
 const Signup = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
+    name: "", // Added name field
     email: "",
     password: "",
     confirmPassword: "",
@@ -34,19 +35,19 @@ const Signup = () => {
     }
 
     try {
-      const response = await axios.post("http://localhost:5555/users/register", {
+      const response = await axios.post("http://localhost:5555/users/signup", {
+        name: formData.name, // Include name
         email: formData.email,
         password: formData.password,
       });
 
-      // Store JWT token in localStorage
-      localStorage.setItem("token", response.data.token);
-
-      // Optionally store user data
+      // Backend returns { success: true, message, user }
+      // Store JWT token from cookie (handled by backend's generateJWTToken)
+      // Optionally store user data in localStorage
       localStorage.setItem("user", JSON.stringify(response.data.user));
 
-      // Redirect to a protected route or home
-      navigate("/");
+      // Redirect to a protected route or verification page
+      navigate("/verify-email"); // Adjust based on your flow
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");
     } finally {
@@ -72,6 +73,18 @@ const Signup = () => {
           </div>
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}
           <form className="space-y-4" onSubmit={handleSubmit}>
+            <div className="flex flex-col">
+              <label className="text-sm font-medium text-gray-600">Name</label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="Enter your name"
+                className="border border-gray-300 bg-white p-3 w-full rounded-lg focus:ring-2 focus:ring-[#e63946] text-black"
+                required
+              />
+            </div>
             <div className="flex flex-col">
               <label className="text-sm font-medium text-gray-600">Email Address</label>
               <input

@@ -23,22 +23,29 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:5555/users/login", {
-        email: formData.email,
-        password: formData.password,
+      const response = await axios.post(
+        "http://localhost:5555/api/auth/login",
+        {
+          email: formData.email,
+          password: formData.password,
+        },
+        { withCredentials: true } // Include cookies for JWT
+      );
+
+      // Backend sets JWT token in a cookie, no need to store in localStorage
+      // Optionally, you can fetch user data using the /check-auth endpoint
+      const userResponse = await axios.get("http://localhost:5555/api/auth/check-auth", {
+        withCredentials: true,
       });
 
-      // Store JWT token in localStorage
-      localStorage.setItem("token", response.data.token);
-
-      // Optionally store user data
-      localStorage.setItem("user", JSON.stringify(response.data.user));
+      // Store user data in localStorage if needed
+      localStorage.setItem("user", JSON.stringify(userResponse.data.user));
 
       // Redirect to a protected route
       navigate("/");
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
-      console.log("login failed")
+      console.log("Login error:", err.response?.data || err);
     } finally {
       setLoading(false);
     }
@@ -85,7 +92,7 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1 STILL WANT TO DO THIS? top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
                   {showPassword ? "👁️" : "👁️‍🗨️"}
                 </button>
@@ -110,12 +117,12 @@ const Login = () => {
             </button>
             <div className="text-center mt-4">
               <Link to="/forgot-password" className="text-sm text-gray-500 hover:underline">
-                forgot password? <span className="text-[#e63946]">Go to</span>
+                Forgot password? <span className="text-[#e63946]">Reset</span>
               </Link>
             </div>
             <div className="text-center mt-4">
               <p className="text-sm text-gray-600">
-                Don't have an account?{" "}
+                Dont have an account?{" "}
                 <Link to="/signup" className="text-[#e63946] font-medium hover:underline">
                   Sign up
                 </Link>
