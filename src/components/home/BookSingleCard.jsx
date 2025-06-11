@@ -45,7 +45,7 @@ const BookSingleCard = ({ card }) => {
       </div>
 
       {/* Action Buttons */}
-      <div className="flex justify-end gap-3 mt-4">
+      <div className="flex justify-end gap-2 mt-4 justify-center">
         <button
           onClick={() => setShowModal(true)}
           className="group p-2 rounded-full hover:bg-blue-100 transition-colors"
