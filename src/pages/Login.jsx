@@ -8,13 +8,18 @@ const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    rememberMe: false, // Added for rememberMe functionality
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === "checkbox" ? checked : value,
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -23,8 +28,9 @@ const Login = () => {
     setLoading(true);
 
     try {
+      // Login request to backend
       const response = await axios.post(
-        "http://localhost:5555/api/auth/login",
+        "http://localhost:5555/users/login",
         {
           email: formData.email,
           password: formData.password,
@@ -32,20 +38,33 @@ const Login = () => {
         { withCredentials: true } // Include cookies for JWT
       );
 
-      // Backend sets JWT token in a cookie, no need to store in localStorage
-      // Optionally, you can fetch user data using the /check-auth endpoint
-      const userResponse = await axios.get("http://localhost:5555/api/auth/check-auth", {
-        withCredentials: true,
-      });
+      if (response.data.success) {
+        // Fetch user data using /check-auth
+        const userResponse = await axios.get("http://localhost:5555/users/check-auth", {
+          withCredentials: true,
+        });
 
-      // Store user data in localStorage if needed
-      localStorage.setItem("user", JSON.stringify(userResponse.data.user));
+        if (userResponse.data.success) {
+          // Store user data in localStorage (excluding password)
+          localStorage.setItem("user", JSON.stringify(userResponse.data.user));
 
-      // Redirect to a protected route
-      navigate("/");
+          // Optionally adjust JWT cookie expiration based on rememberMe
+          if (formData.rememberMe) {
+            // Backend should set a longer-lived JWT cookie
+            // This requires backend modification (see notes below)
+          }
+
+          // Redirect to a protected route
+          navigate("/"); // Adjust to your protected route
+        } else {
+          throw new Error("Failed to fetch user data");
+        }
+      }
     } catch (err) {
-      setError(err.response?.data?.message || "Login failed");
-      console.log("Login error:", err.response?.data || err);
+      // Handle specific backend error messages
+      const errorMessage = err.response?.data?.message || "Login failed. Please try again.";
+      setError(errorMessage);
+      console.error("Login error:", err.response?.data || err);
     } finally {
       setLoading(false);
     }
@@ -61,7 +80,7 @@ const Login = () => {
               <h2 className="text-2xl font-bold text-gray-600 mt-2">Login to Card-Ology</h2>
             </div>
           </div>
-          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+          {error && <p className="text-red-500 text-sm text-center mb-4">{error}</p>}
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="flex flex-col">
               <label className="text-sm font-medium text-gray-600">Email Address</label>
@@ -92,7 +111,7 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1 STILL WANT TO DO THIS? top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
                   {showPassword ? "👁️" : "👁️‍🗨️"}
                 </button>
@@ -102,6 +121,8 @@ const Login = () => {
               <input
                 type="checkbox"
                 name="rememberMe"
+                checked={formData.rememberMe}
+                onChange={handleChange}
                 className="w-4 h-4 cursor-pointer accent-[#e63946]"
               />
               <label className="text-sm text-gray-600">Remember Me</label>
@@ -122,7 +143,7 @@ const Login = () => {
             </div>
             <div className="text-center mt-4">
               <p className="text-sm text-gray-600">
-                Dont have an account?{" "}
+                Don’t have an account?{" "}
                 <Link to="/signup" className="text-[#e63946] font-medium hover:underline">
                   Sign up
                 </Link>

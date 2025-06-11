@@ -27,7 +27,7 @@ const NavBar = () => {
   };
 
   return (
-    <nav className="w-full h-[80px] bg-gradient-to-r from-neutral-800 to-neutral-700 sticky top-0 z-50 shadow-lg">
+    <nav className="w-full h-[80px] bg-gradient-to-r from-neutral-800 to-neutral-700 border-b-2 border-neutral-300 sticky top-0 z-50 shadow-lg">
       <div className="max-w-7xl mx-auto flex justify-between items-center h-full px-4 sm:px-6">
         {/* Logo Section */}
         <div className="flex items-center">

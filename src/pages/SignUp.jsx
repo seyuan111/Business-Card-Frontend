@@ -8,7 +8,7 @@ import NavBar from "../components/NavBar";
 const Signup = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    name: "", // Added name field
+    name: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -17,6 +17,9 @@ const Signup = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [verificationError, setVerificationError] = useState("");
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -36,20 +39,40 @@ const Signup = () => {
 
     try {
       const response = await axios.post("http://localhost:5555/users/signup", {
-        name: formData.name, // Include name
+        name: formData.name,
         email: formData.email,
         password: formData.password,
       });
 
-      // Backend returns { success: true, message, user }
-      // Store JWT token from cookie (handled by backend's generateJWTToken)
-      // Optionally store user data in localStorage
+      // Store user data in localStorage
       localStorage.setItem("user", JSON.stringify(response.data.user));
 
-      // Redirect to a protected route or verification page
-      navigate("/verify-email"); // Adjust based on your flow
+      // Show verification modal instead of redirecting
+      setShowVerificationModal(true);
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerificationSubmit = async (e) => {
+    e.preventDefault();
+    setVerificationError("");
+    setLoading(true);
+
+    try {
+      const response = await axios.post("http://localhost:5555/users/verify-email", {
+        code: verificationCode,
+      });
+
+      if (response.data.success) {
+        // On successful verification, user is already logged in via JWT from signup
+        setShowVerificationModal(false);
+        navigate("/"); // Redirect to a protected route (adjust as needed)
+      }
+    } catch (err) {
+      setVerificationError(err.response?.data?.message || "Verification failed");
     } finally {
       setLoading(false);
     }
@@ -159,6 +182,49 @@ const Signup = () => {
           </form>
         </div>
       </div>
+
+      {/* Verification Modal */}
+      {showVerificationModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm">
+            <h2 className="text-xl font-bold text-gray-600 mb-4">Verify Your Email</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Please enter the verification code sent to your email.
+            </p>
+            {verificationError && (
+              <p className="text-red-500 text-sm text-center mb-4">{verificationError}</p>
+            )}
+            <form onSubmit={handleVerificationSubmit} className="space-y-4">
+              <div className="flex flex-col">
+                <label className="text-sm font-medium text-gray-600">Verification Code</label>
+                <input
+                  type="text"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
+                  placeholder="Enter verification code"
+                  className="border border-gray-300 bg-white p-3 w-full rounded-lg focus:ring-2 focus:ring-[#e63946] text-black"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className={`w-full py-3 bg-[#e63946] hover:bg-[#d62828] text-white rounded-lg text-lg font-semibold transition shadow-md ${
+                  loading ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+              >
+                {loading ? "Verifying..." : "Verify"}
+              </button>
+            </form>
+            <button
+              onClick={() => setShowVerificationModal(false)}
+              className="w-full mt-4 text-sm text-gray-600 hover:underline"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
