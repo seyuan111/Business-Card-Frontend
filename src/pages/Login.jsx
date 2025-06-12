@@ -137,8 +137,8 @@ const Login = () => {
               {loading ? "Logging In..." : "Log In"}
             </button>
             <div className="text-center mt-4">
-              <Link to="/forgot-password" className="text-sm text-gray-500 hover:underline">
-                Forgot password? <span className="text-[#e63946]">Reset</span>
+              <Link to="/forgot-password" className="text-sm text-gray-500">
+                Forgot password? <span className="text-[#e63946] hover:underline">Reset Password</span>
               </Link>
             </div>
             <div className="text-center mt-4">

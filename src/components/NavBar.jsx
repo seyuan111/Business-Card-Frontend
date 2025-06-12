@@ -1,15 +1,41 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; // Added useNavigate
 import { AiOutlineMenu, AiOutlineClose } from 'react-icons/ai';
 import { CiCreditCard1 } from 'react-icons/ci';
-import { motion, AnimatePresence } from 'framer-motion'; // Added for animations
+import { motion, AnimatePresence } from 'framer-motion';
 import 'tailwindcss/tailwind.css';
+import axios from 'axios'; // Added for logout API call
 
 const NavBar = () => {
   const [nav, setNav] = useState(false);
+  const navigate = useNavigate(); // For redirecting after logout
+  const isAuthenticated = !!localStorage.getItem('user'); // Check if user is logged in
 
   const handleNav = () => {
     setNav(!nav);
+  };
+
+  // Logout function
+  const handleLogout = async () => {
+    try {
+      // Call backend to clear JWT cookie (optional, depending on backend setup)
+      await axios.post(
+        'http://localhost:5555/users/logout',
+        {},
+        { withCredentials: true }
+      );
+
+      // Clear localStorage
+      localStorage.removeItem('user');
+
+      // Close mobile menu if open
+      setNav(false);
+
+      // Redirect to home page
+      navigate('/');
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
   };
 
   // Animation variants for mobile menu
@@ -59,12 +85,21 @@ const NavBar = () => {
           >
             Add Card
           </Link>
-          <Link
-            to="/Login"
-            className="text-white text-lg font-medium hover:text-blue-300 transition-colors duration-200"
-          >
-            Login
-          </Link>
+          {isAuthenticated ? (
+            <button
+              onClick={handleLogout}
+              className="text-white text-lg font-medium hover:text-blue-300 transition-colors duration-200"
+            >
+              Logout
+            </button>
+          ) : (
+            <Link
+              to="/Login"
+              className="text-white text-lg font-medium hover:text-blue-300 transition-colors duration-200"
+            >
+              Login
+            </Link>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -135,13 +170,22 @@ const NavBar = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
                 >
-                  <Link
-                    to="/Login"
-                    className="text-white text-2xl font-medium hover:text-blue-300 transition-colors"
-                    onClick={handleNav}
-                  >
-                    Login
-                  </Link>
+                  {isAuthenticated ? (
+                    <button
+                      onClick={handleLogout}
+                      className="text-white text-2xl font-medium hover:text-blue-300 transition-colors"
+                    >
+                      Logout
+                    </button>
+                  ) : (
+                    <Link
+                      to="/Login"
+                      className="text-white text-2xl font-medium hover:text-blue-300 transition-colors"
+                      onClick={handleNav}
+                    >
+                      Login
+                    </Link>
+                  )}
                 </motion.li>
               </ul>
             </motion.div>
