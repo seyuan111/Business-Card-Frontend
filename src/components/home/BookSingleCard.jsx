@@ -13,7 +13,7 @@ const BookSingleCard = ({ card }) => {
   return (
     <div className="relative bg-white rounded-xl shadow-lg border border-gray-200 m-4 p-4 sm:p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 w-full max-w-md mx-auto">
       {/* Contact Badge */}
-      <span className="absolute top-3 right-3 px-3 py-1 bg-red-100 text-red-800 text-sm font-medium rounded-full">
+      <span className="sm:static absolute px-3 py-1 bg-red-100 text-red-800 text-sm font-medium rounded-full">
         {card.contact}
       </span>
 

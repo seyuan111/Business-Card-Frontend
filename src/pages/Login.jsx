@@ -136,9 +136,10 @@ const Login = () => {
             >
               {loading ? "Logging In..." : "Log In"}
             </button>
-            <div className="text-center mt-4">
+            <div className="text-center mt-4 flex justify-center items-center gap-1">
+              <p>Forgot Password?</p>
               <Link to="/forgot-password" className="text-sm text-gray-500">
-                Forgot password? <span className="text-[#e63946] hover:underline">Reset Password</span>
+                <span className="text-[#e63946] hover:underline">Reset Password</span>
               </Link>
             </div>
             <div className="text-center mt-4">
