@@ -95,20 +95,24 @@ const CreateBooks = () => {
 
         <div className="bg-white shadow-md rounded-lg p-6">
           <div className="space-y-4">
-            {[ 
-              { label: 'Name', value: name, setter: setName },
+            {[
+              { label: 'Name', value: name, setter: setName, required: true },
               { label: 'Address', value: address, setter: setAddress },
-              { label: 'Email', value: email, setter: setEmail },
+              { label: 'Email (NA if none)', value: email, setter: setEmail, required: true },
               { label: 'Occupation', value: occupation, setter: setOccupation },
-              { 
-                label: 'Contact', 
-                value: contact, 
-                setter: setContact, 
-                helperText: 'Format: (111) 222-5555' // Added helper text
+              {
+                label: 'Contact',
+                value: contact,
+                setter: setContact,
+                helperText: 'Format: (111) 222-5555',
+                required: true,
               },
             ].map((field, index) => (
               <div key={index} className="flex flex-col">
-                <label className="text-gray-400 text-sm font-medium">{field.label}</label>
+                <label className="text-gray-400 text-sm font-medium flex items-center">
+                  {field.label}
+                  {field.required && <span className="text-red-500 ml-1">*</span>}
+                </label>
                 <input
                   type="text"
                   value={field.label === 'Contact' ? contact : field.value}
@@ -116,7 +120,7 @@ const CreateBooks = () => {
                   className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-400 focus:outline-none"
                 />
                 {field.helperText && (
-                  <small className="text-gray-500 mt-1">{field.helperText}</small> // Displaying the helper text
+                  <small className="text-gray-500 mt-1">{field.helperText}</small>
                 )}
               </div>
             ))}
