@@ -6,14 +6,12 @@ import { BsInfoCircle } from 'react-icons/bs';
 import { MdOutlineDelete, MdEmail } from 'react-icons/md';
 import { useState } from 'react';
 import BookModal from './BookModal';
-
 const BookSingleCard = ({ card }) => {
   const [showModal, setShowModal] = useState(false);
-
   return (
     <div className="relative bg-white rounded-xl shadow-lg border border-gray-200 m-4 p-4 sm:p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 w-full max-w-md mx-auto">
       {/* Contact Badge */}
-      <span className="sm:static absolute px-3 py-1 bg-red-100 text-red-800 text-sm font-medium rounded-full">
+      <span className="absolute top-3 right-3 px-3 py-1 bg-red-100 text-red-800 text-sm font-medium rounded-full">
         {card.contact}
       </span>
 
@@ -26,7 +24,6 @@ const BookSingleCard = ({ card }) => {
             {card.name}
           </h2>
         </div>
-
         {/* Address Section */}
         <div className="flex items-center gap-3">
           <BiUserCircle className="text-red-500 text-2xl flex-shrink-0" />
@@ -34,7 +31,6 @@ const BookSingleCard = ({ card }) => {
             {card.address}
           </p>
         </div>
-
         {/* Email Section */}
         <div className="flex items-center gap-3">
           <MdEmail className="text-red-500 text-2xl flex-shrink-0" />
@@ -43,7 +39,6 @@ const BookSingleCard = ({ card }) => {
           </p>
         </div>
       </div>
-
       {/* Action Buttons */}
       <div className="flex justify-end gap-2 mt-4 justify-center">
         <button
@@ -75,7 +70,6 @@ const BookSingleCard = ({ card }) => {
           <MdOutlineDelete className="text-xl text-red-600 group-hover:text-red-800 group-hover:scale-110 transition-transform" />
         </Link>
       </div>
-
       {/* Modal */}
       {showModal && (
         <BookModal card={card} onClose={() => setShowModal(false)} />
@@ -83,5 +77,4 @@ const BookSingleCard = ({ card }) => {
     </div>
   );
 };
-
 export default BookSingleCard;
