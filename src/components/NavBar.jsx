@@ -11,11 +11,11 @@ const NavBar = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const isAuthenticated = !!localStorage.getItem('user');
-  const user = JSON.parse(localStorage.getItem('user')) || { name: 'User' }; // Get user name or default
+  const user = JSON.parse(localStorage.getItem('user')) || { name: 'User' };
 
   const handleNav = () => {
     setNav(!nav);
-    if (dropdownOpen) setDropdownOpen(false); // Close dropdown when toggling mobile menu
+    if (dropdownOpen) setDropdownOpen(false);
   };
 
   const handleDropdown = () => {
@@ -23,18 +23,22 @@ const NavBar = () => {
   };
 
   const handleLogout = async () => {
-    try {
-      await axios.post(
-        'http://localhost:5555/users/logout',
-        {},
-        { withCredentials: true }
-      );
-      localStorage.removeItem('user');
-      setNav(false);
-      setDropdownOpen(false);
-      navigate('/');
-    } catch (err) {
-      console.error('Logout error:', err);
+    // Show confirmation dialog
+    const confirmLogout = window.confirm('Are you sure you want to log out?');
+    if (confirmLogout) {
+      try {
+        await axios.post(
+          'http://localhost:5555/users/logout',
+          {},
+          { withCredentials: true }
+        );
+        localStorage.removeItem('user');
+        setNav(false);
+        setDropdownOpen(false);
+        navigate('/');
+      } catch (err) {
+        console.error('Logout error:', err);
+      }
     }
   };
 
