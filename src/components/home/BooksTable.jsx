@@ -18,7 +18,7 @@ const BooksTable = ({ cards }) => {
 
     setLoading(true);
     try {
-      await axios.delete(`http://localhost:5555/cards/${selectedCard._id}`);
+      await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/cards/${selectedCard._id}`);
       enqueueSnackbar('Card deleted successfully', { variant: 'success' });
       setSelectedCard(null);
     } catch (error) {

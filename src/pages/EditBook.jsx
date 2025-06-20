@@ -19,7 +19,7 @@ const EditBook = () => {
 
   useEffect(() => {
     setLoading(true);
-    axios.get(`http://localhost:5555/cards/${id}`)
+    axios.get(`${import.meta.env.VITE_BACKEND_URL}/cards/${id}`)
       .then((response) => {
         setName(response.data.name);
         setAddress(response.data.address);

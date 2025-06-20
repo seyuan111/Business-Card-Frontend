@@ -25,7 +25,7 @@ const ForgotPassword = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:5555/users/forgot-password",
+        `${import.meta.env.VITE_BACKEND_URL}/users/forgot-password`,
         {
           email: formData.email,
         },

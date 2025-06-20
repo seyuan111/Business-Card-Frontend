@@ -48,7 +48,7 @@ const CreateBooks = () => {
 
     // Check if the email or contact already exists
     axios
-      .get('http://localhost:5555/cards')
+      .get(`${import.meta.env.VITE_BACKEND_URL}/cards`)
       .then((response) => {
         const existingCard = response.data.data.find(
           (card) => card.email === email || card.contact === contact
@@ -63,7 +63,7 @@ const CreateBooks = () => {
           }
         } else {
           axios
-            .post('http://localhost:5555/cards', data)
+            .post(`${import.meta.env.VITE_BACKEND_URL}/cards`, data)
             .then(() => {
               setLoading(false);
               enqueueSnackbar('Card Created successfully', { variant: 'success' });

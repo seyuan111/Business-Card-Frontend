@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AiOutlineMenu, AiOutlineClose, AiOutlineDown, AiOutlineUp } from 'react-icons/ai';
-import { CiCreditCard1 } from 'react-icons/ci';
+import { FaRegAddressCard } from "react-icons/fa";
 import { motion, AnimatePresence } from 'framer-motion';
 import 'tailwindcss/tailwind.css';
 import axios from 'axios';
@@ -76,7 +76,7 @@ const NavBar = () => {
         {/* Logo Section */}
         <div className="flex items-center">
           <Link to="/" className="flex items-center space-x-2 group">
-            <CiCreditCard1 className="text-3xl text-white group-hover:text-blue-300 transition-colors" />
+            <FaRegAddressCard className="text-3xl text-white group-hover:text-blue-300 transition-colors" />
             <h1 className="text-2xl font-bold text-white group-hover:text-blue-300 transition-colors">
               Ology
             </h1>

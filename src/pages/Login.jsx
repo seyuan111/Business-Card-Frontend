@@ -30,7 +30,7 @@ const Login = () => {
     try {
       // Login request to backend
       const response = await axios.post(
-        "http://localhost:5555/users/login",
+        `${import.meta.env.VITE_BACKEND_URL}/users/login`,
         {
           email: formData.email,
           password: formData.password,
@@ -40,7 +40,7 @@ const Login = () => {
 
       if (response.data.success) {
         // Fetch user data using /check-auth
-        const userResponse = await axios.get("http://localhost:5555/users/check-auth", {
+        const userResponse = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/users/check-auth`, {
           withCredentials: true,
         });
 

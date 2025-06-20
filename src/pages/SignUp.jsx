@@ -38,7 +38,7 @@ const Signup = () => {
     }
 
     try {
-      const response = await axios.post("http://localhost:5555/users/signup", {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/users/signup`, {
         name: formData.name,
         email: formData.email,
         password: formData.password,
@@ -62,7 +62,7 @@ const Signup = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post("http://localhost:5555/users/verify-email", {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/users/verify-email`, {
         code: verificationCode,
       });
 
