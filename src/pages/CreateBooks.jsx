@@ -98,7 +98,7 @@ const CreateBooks = () => {
             {[
               { label: 'Name', value: name, setter: setName, required: true },
               { label: 'Address', value: address, setter: setAddress },
-              { label: 'Email (NA if none)', value: email, setter: setEmail, required: true },
+              { label: 'Email', value: email, setter: setEmail, required: true },
               { label: 'Occupation', value: occupation, setter: setOccupation },
               {
                 label: 'Contact',
