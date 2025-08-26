@@ -13,7 +13,7 @@ const ShowBook = () => {
   useEffect(() => {
     setLoading(true);
     axios
-      .get(`http://${import.meta.env.VITE_BACKEND_URL}/cards/${id}`)
+      .get(`${import.meta.env.VITE_BACKEND_URL}/cards/${id}`)
       .then((response) => {
         setCard(response.data);
         setLoading(false);

@@ -5,6 +5,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import NavBar from '../components/NavBar';
+import { isEmail } from '../utils/email'; // Add this import
 
 const CreateBooks = () => {
   const [name, setName] = useState('');
@@ -15,6 +16,10 @@ const CreateBooks = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
+
+  // Add email validation logic
+  const valid = isEmail(email);
+  const emailError = email && !valid ? "Please enter a valid email address." : "";
 
   const formatPhoneNumber = (value) => {
     // Remove any non-numeric characters
@@ -40,6 +45,12 @@ const CreateBooks = () => {
   const handleSaveBook = () => {
     if (!name || !email || !contact) {
       enqueueSnackbar('Please fill out all required fields', { variant: 'error' });
+      return;
+    }
+
+    // Add email validation check
+    if (!valid) {
+      enqueueSnackbar('Please enter a valid email address.', { variant: 'error' });
       return;
     }
 
@@ -95,35 +106,77 @@ const CreateBooks = () => {
 
         <div className="bg-white shadow-md rounded-lg p-6">
           <div className="space-y-4">
-            {[
-              { label: 'Name', value: name, setter: setName, required: true },
-              { label: 'Address', value: address, setter: setAddress },
-              { label: 'Email', value: email, setter: setEmail, required: true },
-              { label: 'Occupation', value: occupation, setter: setOccupation },
-              {
-                label: 'Contact',
-                value: contact,
-                setter: setContact,
-                helperText: 'Format: (111) 222-5555',
-                required: true,
-              },
-            ].map((field, index) => (
-              <div key={index} className="flex flex-col">
-                <label className="text-gray-400 text-sm font-medium flex items-center">
-                  {field.label}
-                  {field.required && <span className="text-red-500 ml-1">*</span>}
-                </label>
-                <input
-                  type="text"
-                  value={field.label === 'Contact' ? contact : field.value}
-                  onChange={field.label === 'Contact' ? handleContactChange : (e) => field.setter(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-400 focus:outline-none"
-                />
-                {field.helperText && (
-                  <small className="text-gray-500 mt-1">{field.helperText}</small>
-                )}
-              </div>
-            ))}
+            {/* Name field */}
+            <div className="flex flex-col">
+              <label className="text-gray-400 text-sm font-medium flex items-center">
+                Name
+                <span className="text-red-500 ml-1">*</span>
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-400 focus:outline-none"
+              />
+            </div>
+
+            {/* Address field */}
+            <div className="flex flex-col">
+              <label className="text-gray-400 text-sm font-medium flex items-center">
+                Address
+              </label>
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-400 focus:outline-none"
+              />
+            </div>
+
+            {/* Email field with validation */}
+            <div className="flex flex-col">
+              <label className="text-gray-400 text-sm font-medium flex items-center">
+                Email
+                <span className="text-red-500 ml-1">*</span>
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-400 focus:outline-none"
+              />
+              {emailError && (
+                <span className="text-red-500 text-xs mt-1">{emailError}</span>
+              )}
+            </div>
+
+            {/* Occupation field */}
+            <div className="flex flex-col">
+              <label className="text-gray-400 text-sm font-medium flex items-center">
+                Occupation
+              </label>
+              <input
+                type="text"
+                value={occupation}
+                onChange={(e) => setOccupation(e.target.value)}
+                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-400 focus:outline-none"
+              />
+            </div>
+
+            {/* Contact field */}
+            <div className="flex flex-col">
+              <label className="text-gray-400 text-sm font-medium flex items-center">
+                Contact
+                <span className="text-red-500 ml-1">*</span>
+              </label>
+              <input
+                type="text"
+                value={contact}
+                onChange={handleContactChange}
+                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-400 focus:outline-none"
+              />
+              <small className="text-gray-500 mt-1">Format: (111) 222-5555</small>
+            </div>
           </div>
 
           <button
