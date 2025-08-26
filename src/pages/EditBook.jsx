@@ -65,7 +65,7 @@ const EditBook = () => {
 
     // Check for existing email or contact number conflicts
     axios
-      .get('http://localhost:5555/cards')
+      .get(`${import.meta.env.VITE_BACKEND_URL}/cards`)
       .then((response) => {
         const existingCard = response.data.data.find(
           (card) => (card.email === email || card.contact === contact) && card._id !== id
@@ -80,7 +80,7 @@ const EditBook = () => {
           }
         } else {
           axios
-            .put(`http://localhost:5555/cards/${id}`, data)
+            .put(`${import.meta.env.VITE_BACKEND_URL}/cards/${id}`, data)
             .then(() => {
               setLoading(false);
               enqueueSnackbar('Card Edited successfully', { variant: 'success' });
