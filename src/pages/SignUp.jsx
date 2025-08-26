@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { BiArrowBack } from "react-icons/bi";
 import axios from "axios";
 import NavBar from "../components/NavBar";
+import { isEmail } from "../utils/email";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -20,6 +21,10 @@ const Signup = () => {
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   const [verificationError, setVerificationError] = useState("");
+  const valid = isEmail(formData.email);
+
+  // Optionally, show an error if the email is invalid
+  const emailError = formData.email && !valid ? "Please enter a valid email address." : "";
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -33,6 +38,12 @@ const Signup = () => {
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
+      setLoading(false);
+      return;
+    }
+
+    if (!valid) {
+      setError("Please enter a valid email address.");
       setLoading(false);
       return;
     }
@@ -119,6 +130,9 @@ const Signup = () => {
                 className="border border-gray-300 bg-white p-3 w-full rounded-lg focus:ring-2 focus:ring-[#e63946] text-black"
                 required
               />
+              {emailError && (
+                <span className="text-red-500 text-xs mt-1">{emailError}</span>
+              )}
             </div>
             <div className="flex flex-col">
               <label className="text-sm font-medium text-gray-600">Password</label>
@@ -165,9 +179,8 @@ const Signup = () => {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-3 bg-[#e63946] hover:bg-[#d62828] text-white rounded-lg text-lg font-semibold transition shadow-md ${
-                loading ? "opacity-50 cursor-not-allowed" : ""
-              }`}
+              className={`w-full py-3 bg-[#e63946] hover:bg-[#d62828] text-white rounded-lg text-lg font-semibold transition shadow-md ${loading ? "opacity-50 cursor-not-allowed" : ""
+                }`}
             >
               {loading ? "Signing Up..." : "Sign Up"}
             </button>
@@ -209,9 +222,8 @@ const Signup = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full py-3 bg-[#e63946] hover:bg-[#d62828] text-white rounded-lg text-lg font-semibold transition shadow-md ${
-                  loading ? "opacity-50 cursor-not-allowed" : ""
-                }`}
+                className={`w-full py-3 bg-[#e63946] hover:bg-[#d62828] text-white rounded-lg text-lg font-semibold transition shadow-md ${loading ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
               >
                 {loading ? "Verifying..." : "Verify"}
               </button>
