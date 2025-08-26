@@ -28,7 +28,7 @@ const NavBar = () => {
     if (confirmLogout) {
       try {
         await axios.post(
-          'http://localhost:5555/users/logout',
+          `${import.meta.env.VITE_BACKEND_URL}/users/logout`,
           {},
           { withCredentials: true }
         );

@@ -15,7 +15,7 @@ const Home = () => {
   useEffect(() => {
     setLoading(true);
     axios
-      .get('http://localhost:5555/cards')
+      .get(`${import.meta.env.VITE_BACKEND_URL}/cards`)
       .then((response) => {
         setCards(response.data.data);
         setLoading(false);
