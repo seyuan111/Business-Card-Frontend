@@ -4,6 +4,7 @@ import { BiUserCircle, BiShow } from 'react-icons/bi';
 import { AiOutlineEdit } from 'react-icons/ai';
 import { BsInfoCircle } from 'react-icons/bs';
 import { MdOutlineDelete, MdEmail } from 'react-icons/md';
+import { FaPhone } from "react-icons/fa";
 import { useState } from 'react';
 import BookModal from './BookModal';
 const BookSingleCard = ({ card }) => {
@@ -11,9 +12,6 @@ const BookSingleCard = ({ card }) => {
   return (
     <div className="relative bg-white rounded-xl shadow-lg border border-gray-200 m-4 p-4 sm:p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 w-full max-w-md mx-auto">
       {/* Contact Badge */}
-      <span className="absolute top-3 right-3 px-3 py-1 bg-red-100 text-red-800 text-sm font-medium rounded-full">
-        {card.contact}
-      </span>
 
       {/* Card Content */}
       <div className="space-y-3">
@@ -38,16 +36,16 @@ const BookSingleCard = ({ card }) => {
             {card.email}
           </p>
         </div>
+
+        <div className="flex items-center gap-3">
+          <FaPhone className="text-red-500 text-xl flex-shrink-0" />
+          <p className="text-sm sm:text-base text-gray-600 truncate">
+            {card.contact}
+          </p>
+        </div>
       </div>
       {/* Action Buttons */}
       <div className="flex justify-end gap-2 mt-4 justify-center">
-        <button
-          onClick={() => setShowModal(true)}
-          className="group p-2 rounded-full hover:bg-blue-100 transition-colors"
-          aria-label="Show details"
-        >
-          <BiShow className="text-xl text-blue-600 group-hover:text-blue-800 group-hover:scale-110 transition-transform" />
-        </button>
         <Link
           to={`/cards/details/${card._id}`}
           className="group p-2 rounded-full hover:bg-green-100 transition-colors"
