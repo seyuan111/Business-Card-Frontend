@@ -6,7 +6,6 @@ import { BsInfoCircle } from 'react-icons/bs';
 import { MdOutlineDelete, MdEmail } from 'react-icons/md';
 import { FaPhone } from "react-icons/fa";
 import { useState } from 'react';
-import BookModal from './BookModal';
 const BookSingleCard = ({ card }) => {
   const [showModal, setShowModal] = useState(false);
   return (
