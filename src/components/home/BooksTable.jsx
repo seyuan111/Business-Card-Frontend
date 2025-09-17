@@ -5,7 +5,7 @@ import { BsInfoCircle } from 'react-icons/bs';
 import { MdOutlineDelete } from 'react-icons/md';
 import axios from 'axios';
 import { useSnackbar } from 'notistack';
-import { motion, AnimatePresence } from 'framer-motion'; // Added for animations
+import { motion, AnimatePresence } from 'framer-motion';
 
 const BooksTable = ({ cards }) => {
   const [selectedCard, setSelectedCard] = useState(null);
@@ -32,6 +32,21 @@ const BooksTable = ({ cards }) => {
   const filteredCards = cards.filter((card) =>
     card.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  // Utility function to truncate text with tooltip
+  const TruncatedText = ({ text, maxLength = 30, className = "" }) => {
+    const shouldTruncate = text && text.length > maxLength;
+    const displayText = shouldTruncate ? `${text.substring(0, maxLength)}...` : text;
+
+    return (
+      <span 
+        className={`${className} ${shouldTruncate ? 'cursor-help' : ''}`}
+        title={shouldTruncate ? text : undefined}
+      >
+        {displayText}
+      </span>
+    );
+  };
 
   return (
     <div className="w-full p-4 sm:p-6 max-w-7xl mx-auto">
@@ -67,14 +82,21 @@ const BooksTable = ({ cards }) => {
           transition={{ duration: 0.5 }}
           className="overflow-x-auto rounded-xl shadow-lg"
         >
-          <table className="w-full border-collapse bg-white">
+          <table className="w-full border-collapse bg-white table-fixed">
+            <colgroup>
+              <col className="w-16" /> {/* No column - fixed narrow width */}
+              <col className="w-1/4" /> {/* Name column */}
+              <col className="w-1/3" /> {/* Email column */}
+              <col className="w-1/4" /> {/* Contact column */}
+              <col className="w-24" /> {/* Actions column - fixed width */}
+            </colgroup>
             <thead>
               <tr className="bg-gradient-to-r from-blue-700 to-blue-900 text-white">
-                <th className="px-6 py-4 text-left">No</th>
-                <th className="px-6 py-4 text-left">Name</th>
-                <th className="px-6 py-4 text-left">Email</th>
-                <th className="px-6 py-4 text-left">Contact</th>
-                <th className="px-6 py-4 text-left">Actions</th>
+                <th className="px-4 py-4 text-left font-semibold">No</th>
+                <th className="px-4 py-4 text-left font-semibold">Name</th>
+                <th className="px-4 py-4 text-left font-semibold">Email</th>
+                <th className="px-4 py-4 text-left font-semibold">Contact</th>
+                <th className="px-4 py-4 text-center font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -82,25 +104,57 @@ const BooksTable = ({ cards }) => {
                 filteredCards.map((card, index) => (
                   <motion.tr
                     key={card._id}
-                    className="hover:bg-gray-50 transition-colors"
+                    className="hover:bg-gray-50 transition-colors border-b border-gray-100"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: index * 0.1 }}
                   >
-                    <td className="px-6 py-4">{index + 1}</td>
-                    <td className="px-6 py-4 font-medium">{card.name}</td>
-                    <td className="px-6 py-4">{card.email}</td>
-                    <td className="px-6 py-4">{card.contact}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-3">
-                        <Link to={`/cards/details/${card._id}`} className="group">
-                          <BsInfoCircle className="text-xl text-green-600 group-hover:scale-110 transition-transform" />
+                    <td className="px-4 py-4 text-sm font-medium text-gray-700">
+                      {index + 1}
+                    </td>
+                    <td className="px-4 py-4">
+                      <TruncatedText 
+                        text={card.name} 
+                        maxLength={25}
+                        className="font-medium text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis block"
+                      />
+                    </td>
+                    <td className="px-4 py-4">
+                      <TruncatedText 
+                        text={card.email} 
+                        maxLength={30}
+                        className="text-gray-700 whitespace-nowrap overflow-hidden text-ellipsis block"
+                      />
+                    </td>
+                    <td className="px-4 py-4">
+                      <TruncatedText 
+                        text={card.contact} 
+                        maxLength={20}
+                        className="text-gray-700 whitespace-nowrap overflow-hidden text-ellipsis block"
+                      />
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex justify-center items-center gap-2">
+                        <Link 
+                          to={`/cards/details/${card._id}`} 
+                          className="group p-1 rounded-full hover:bg-green-50 transition-colors"
+                          title="View Details"
+                        >
+                          <BsInfoCircle className="text-lg text-green-600 group-hover:scale-110 transition-transform" />
                         </Link>
-                        <Link to={`/cards/edit/${card._id}`} className="group">
-                          <AiOutlineEdit className="text-xl text-yellow-600 group-hover:scale-110 transition-transform" />
+                        <Link 
+                          to={`/cards/edit/${card._id}`} 
+                          className="group p-1 rounded-full hover:bg-yellow-50 transition-colors"
+                          title="Edit Card"
+                        >
+                          <AiOutlineEdit className="text-lg text-yellow-600 group-hover:scale-110 transition-transform" />
                         </Link>
-                        <button onClick={() => setSelectedCard(card)} className="group">
-                          <MdOutlineDelete className="text-xl text-red-600 group-hover:scale-110 transition-transform" />
+                        <button 
+                          onClick={() => setSelectedCard(card)} 
+                          className="group p-1 rounded-full hover:bg-red-50 transition-colors"
+                          title="Delete Card"
+                        >
+                          <MdOutlineDelete className="text-lg text-red-600 group-hover:scale-110 transition-transform" />
                         </button>
                       </div>
                     </td>
@@ -130,37 +184,77 @@ const BooksTable = ({ cards }) => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
-                  className="bg-white rounded-xl shadow-md p-4 sm:p-5"
+                  className="bg-white rounded-xl shadow-md p-4 sm:p-5 border border-gray-100"
                 >
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="font-semibold text-blue-600">#{index + 1}</span>
-                    <div className="flex gap-3">
-                      <Link to={`/cards/details/${card._id}`} className="group">
+                  <div className="flex justify-between items-start mb-3">
+                    <span className="font-semibold text-blue-600 text-sm bg-blue-50 px-2 py-1 rounded-full">
+                      #{index + 1}
+                    </span>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <Link 
+                        to={`/cards/details/${card._id}`} 
+                        className="group p-2 rounded-full hover:bg-green-50 transition-colors"
+                        title="View Details"
+                      >
                         <BsInfoCircle className="text-lg text-green-600 group-hover:scale-110 transition-transform" />
                       </Link>
-                      <Link to={`/cards/edit/${card._id}`} className="group">
+                      <Link 
+                        to={`/cards/edit/${card._id}`} 
+                        className="group p-2 rounded-full hover:bg-yellow-50 transition-colors"
+                        title="Edit Card"
+                      >
                         <AiOutlineEdit className="text-lg text-yellow-600 group-hover:scale-110 transition-transform" />
                       </Link>
-                      <button onClick={() => setSelectedCard(card)} className="group">
+                      <button 
+                        onClick={() => setSelectedCard(card)} 
+                        className="group p-2 rounded-full hover:bg-red-50 transition-colors"
+                        title="Delete Card"
+                      >
                         <MdOutlineDelete className="text-lg text-red-600 group-hover:scale-110 transition-transform" />
                       </button>
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-lg font-semibold text-gray-800">{card.name}</p>
-                    <p className="text-sm text-gray-600">{card.email}</p>
-                    <p className="text-sm text-gray-600">{card.contact}</p>
+                  
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-1 gap-2">
+                      <div>
+                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Name</label>
+                        <p className="text-base font-semibold text-gray-800 truncate" title={card.name}>
+                          {card.name}
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Email</label>
+                        <p className="text-sm text-gray-600 truncate" title={card.email}>
+                          {card.email}
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Contact</label>
+                        <p className="text-sm text-gray-600 truncate" title={card.contact}>
+                          {card.contact}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               ))
             ) : (
-              <motion.p
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-center text-gray-500 py-8"
+                className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-100"
               >
-                No matching results found.
-              </motion.p>
+                <div className="text-gray-400 mb-2">
+                  <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <p className="text-gray-500 text-lg font-medium">No matching results found</p>
+                <p className="text-gray-400 text-sm mt-1">Try adjusting your search terms</p>
+              </motion.div>
             )}
           </AnimatePresence>
         </div>
@@ -179,28 +273,46 @@ const BooksTable = ({ cards }) => {
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
-              className="bg-white rounded-xl p-6 w-full max-w-md"
+              className="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl"
             >
-              <h2 className="text-xl font-bold text-gray-800 mb-3">Confirm Delete</h2>
-              <p className="text-gray-600 mb-6">
+              <div className="flex items-center mb-4">
+                <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <MdOutlineDelete className="text-red-600 text-xl" />
+                </div>
+                <h2 className="ml-3 text-xl font-bold text-gray-800">Confirm Delete</h2>
+              </div>
+              
+              <p className="text-gray-600 mb-6 leading-relaxed">
                 Are you sure you want to delete{' '}
-                <span className="font-semibold">{selectedCard.name}</span>?
+                <span className="font-semibold text-gray-800">"{selectedCard.name}"</span>? 
+                This action cannot be undone.
               </p>
+              
               <div className="flex justify-end gap-3">
                 <button
                   onClick={() => setSelectedCard(null)}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
+                  className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleDeleteCard}
                   disabled={loading}
-                  className={`px-4 py-2 bg-red-600 text-white rounded-lg transition-colors ${
-                    loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-700'
+                  className={`px-5 py-2.5 bg-red-600 text-white rounded-lg transition-colors font-medium ${
+                    loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-700 active:bg-red-800'
                   }`}
                 >
-                  {loading ? 'Deleting...' : 'Delete'}
+                  {loading ? (
+                    <span className="flex items-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Deleting...
+                    </span>
+                  ) : (
+                    'Delete'
+                  )}
                 </button>
               </div>
             </motion.div>

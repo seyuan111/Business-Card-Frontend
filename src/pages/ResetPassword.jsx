@@ -37,14 +37,32 @@ const ResetPassword = () => {
         `${import.meta.env.VITE_BACKEND_URL}/users/reset-password/${token}`,
         {
           password: formData.password,
+          autoLogin: true, // Add flag to indicate auto-login is requested
         },
         { withCredentials: true } // Include cookies if needed
       );
 
       // Display success message
-      setSuccess(response.data.message || "Password reset successfully. You can now log in.");
+      setSuccess(response.data.message || "Password reset successfully. Logging you in...");
       setFormData({ password: "", confirmPassword: "" }); // Clear form
-      navigate("/"); // Redirect to login after 3 seconds
+
+      // If the backend returns authentication data (token, user info, etc.)
+      // Store it appropriately (this depends on your auth implementation)
+      if (response.data.token) {
+        // If using localStorage for token storage
+        localStorage.setItem('authToken', response.data.token);
+      }
+      
+      if (response.data.user) {
+        // If storing user data
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+      }
+
+      // Redirect to dashboard or home page after successful auto-login
+      setTimeout(() => {
+        navigate("/dashboard"); // Change this to your desired post-login route
+      }, 2000);
+
     } catch (err) {
       setError(err.response?.data?.message || "Failed to reset password.");
       console.log("Reset password error:", err.response?.data || err);
@@ -68,7 +86,7 @@ const ResetPassword = () => {
             <div className="text-center">
               <h2 className="text-2xl font-bold text-gray-600 mt-2">Set New Password</h2>
               <p className="text-sm text-gray-500 mt-2">
-                Enter your new password below to reset your account password.
+                Enter your new password below. You'll be automatically logged in after resetting.
               </p>
             </div>
           </div>
@@ -106,7 +124,7 @@ const ResetPassword = () => {
                 loading ? "opacity-50 cursor-not-allowed" : ""
               }`}
             >
-              {loading ? "Resetting..." : "Reset Password"}
+              {loading ? "Resetting..." : "Reset Password & Login"}
             </button>
             <div className="text-center mt-4">
               <p className="text-sm text-gray-600">
