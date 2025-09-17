@@ -60,7 +60,7 @@ const ResetPassword = () => {
 
       // Redirect to dashboard or home page after successful auto-login
       setTimeout(() => {
-        navigate("/dashboard"); // Change this to your desired post-login route
+        navigate("/"); // Change this to your desired post-login route
       }, 2000);
 
     } catch (err) {
