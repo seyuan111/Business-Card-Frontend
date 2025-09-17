@@ -22,27 +22,43 @@ const Login = () => {
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
+  setLoading(true);
 
-    try {
-      // Login request to backend
-      const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/users/login`,
-        {
-          email: formData.email,
-          password: formData.password,
-        },
-        { withCredentials: true } // Include cookies for JWT
-      );
+  try {
+    // Login request to backend
+    const response = await axios.post(
+      `${import.meta.env.VITE_BACKEND_URL}/users/login`,
+      {
+        email: formData.email,
+        password: formData.password,
+      },
+      { withCredentials: true } // Include cookies for desktop compatibility
+    );
 
-      if (response.data.success) {
-        // Fetch user data using /check-auth
-        const userResponse = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/users/check-auth`, {
-          withCredentials: true,
-        });
+    if (response.data.success) {
+      // Store token in localStorage for mobile compatibility
+      if (response.data.token) {
+        localStorage.setItem("token", response.data.token);
+      }
+
+      // If user data is returned directly in login response, use it
+      if (response.data.user) {
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+        navigate("/");
+      } else {
+        // Fetch user data using /check-auth with both methods
+        const token = response.data.token || localStorage.getItem("token");
+        
+        const userResponse = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/users/check-auth`,
+          {
+            headers: token ? { Authorization: `Bearer ${token}` } : {}, // Add Authorization header for mobile
+            withCredentials: true, // Keep cookies for desktop compatibility
+          }
+        );
 
         if (userResponse.data.success) {
           // Store user data in localStorage (excluding password)
@@ -55,20 +71,21 @@ const Login = () => {
           }
 
           // Redirect to a protected route
-          navigate("/"); // Adjust to your protected route
+          navigate("/");
         } else {
           throw new Error("Failed to fetch user data");
         }
       }
-    } catch (err) {
-      // Handle specific backend error messages
-      const errorMessage = err.response?.data?.message || "Login failed. Please try again.";
-      setError(errorMessage);
-      console.error("Login error:", err.response?.data || err);
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (err) {
+    // Handle specific backend error messages
+    const errorMessage = err.response?.data?.message || "Login failed. Please try again.";
+    setError(errorMessage);
+    console.error("Login error:", err.response?.data || err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="w-full min-h-screen flex flex-col bg-gradient-to-br from-[#e6f0fa] via-[#f9e6f0] to-[#e6f0fa] text-gray-700">
