@@ -1,7 +1,7 @@
 // src/context/AuthContext.js
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from 'axios'; // Your Axios instance
 
 export const AuthContext = createContext();
 
@@ -16,23 +16,13 @@ export const AuthProvider = ({ children }) => {
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          // Use the correct endpoint that exists in your backend
-          const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/users/check-auth`, {
+          const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/users/profile`, {
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${token}`, // Include the token in the request
             },
-            withCredentials: true, // Include for cookie compatibility
           });
-          
-          // Your backend returns { success: true, user: {...} }
-          if (response.data.success) {
-            setUser(response.data.user);
-            setIsAuthenticated(true);
-            // Update localStorage with fresh user data
-            localStorage.setItem('user', JSON.stringify(response.data.user));
-          } else {
-            throw new Error('Authentication failed');
-          }
+          setUser(response.data);
+          setIsAuthenticated(true);
         } catch (error) {
           console.error('Auth verification failed:', error);
           localStorage.removeItem('token');
