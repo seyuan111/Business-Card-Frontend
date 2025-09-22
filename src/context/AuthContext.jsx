@@ -1,7 +1,7 @@
 // src/context/AuthContext.js
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios'; // Your Axios instance
+import axios from 'axios';
 
 export const AuthContext = createContext();
 
@@ -16,12 +16,15 @@ export const AuthProvider = ({ children }) => {
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/users/profile`, {
+          // Updated endpoint to match your backend controller
+          const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/users/check-auth`, {
             headers: {
-              Authorization: `Bearer ${token}`, // Include the token in the request
+              Authorization: `Bearer ${token}`,
             },
           });
-          setUser(response.data);
+          
+          // Updated to access the user data correctly based on your backend response
+          setUser(response.data.user);
           setIsAuthenticated(true);
         } catch (error) {
           console.error('Auth verification failed:', error);
@@ -44,12 +47,27 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(true);
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-    setIsAuthenticated(false);
-    navigate('/login');
+  const logout = async () => {
+    try {
+      // Call backend logout endpoint
+      const token = localStorage.getItem('token');
+      if (token) {
+        await axios.post(`${import.meta.env.VITE_BACKEND_URL}/users/logout`, {}, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Always clear local storage and state
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setUser(null);
+      setIsAuthenticated(false);
+      navigate('/login');
+    }
   };
 
   const value = {
