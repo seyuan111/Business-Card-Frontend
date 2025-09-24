@@ -278,7 +278,7 @@ const NavBar = () => {
             ) : (
               <Link
                 to="/Login"
-                className=" hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg transition-all duration-300 border border-white hover:border-blue-400"
+                className=" hover:bg-black text-white font-medium px-6 py-2 rounded-lg transition-all duration-300 border border-white"
               >
                 Sign In
               </Link>
