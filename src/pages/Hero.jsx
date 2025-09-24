@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'; // For animations
 import NavBar from '../components/NavBar';
 import Sliders from '../components/Sliders';
 import Reviews from '../components/Reviews';
+import Footer from '../components/Footer'
 
 const Hero = () => {
   // Animation variants for framer-motion
@@ -122,6 +123,7 @@ const Hero = () => {
       >
         <Sliders />
         <Reviews />
+        <Footer />
       </motion.div>
     </div>
   );
