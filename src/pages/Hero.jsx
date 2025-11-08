@@ -1,10 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion'; // For animations
+import { motion } from 'framer-motion';
 import NavBar from '../components/NavBar';
 import Sliders from '../components/Sliders';
+import HowItWorks from '../components/HowItWorks'
+import CreateLogo from '../components/CreateLogo'
 import Reviews from '../components/Reviews';
-import Footer from '../components/Footer'
+import Footer from '../components/Footer';
+import BusinessCardNextGen from '../assets/BusinessCardNextGen.jpeg'
 
 const Hero = () => {
   // Animation variants for framer-motion
@@ -28,42 +31,41 @@ const Hero = () => {
 
       {/* Hero Section */}
       <div className="relative flex min-h-[calc(100vh-80px)] flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
-        {/* Optional Background Image with Overlay */}
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-black/20"></div>
-          {/* Add a background image if desired */}
-          {/* <img src="/path-to-image.jpg" alt="Hero Background" className="w-full h-full object-cover" /> */}
+        {/* Background Image with Overlay */}
+        <div className="absolute inset-0 z-0">
+              <img src={BusinessCardNextGen} alt="Business Card Background" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black/40"></div>
         </div>
 
-        {/* Main Content */}
+        {/* Main Content - Now with relative positioning and z-index */}
         <motion.div
-          className="text-center max-w-4xl mx-auto"
+          className="relative z-10 text-center max-w-4xl mx-auto"
           initial="hidden"
           animate="visible"
           variants={staggerContainer}
         >
-          {/* Main Heading */}
+          {/* Main Heading - Changed to white text for visibility */}
           <motion.h1
-            className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight text-gray-900 mb-6"
+            className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight text-white mb-6"
             variants={fadeInUp}
           >
-            The Business Cards
+            The Next Card Generation
           </motion.h1>
 
-          {/* Subheading */}
+          {/* Subheading - Changed to light gray for visibility */}
           <motion.h2
-            className="mt-4 text-lg sm:text-xl lg:text-2xl text-gray-600 max-w-3xl mx-auto"
+            className="mt-4 text-lg sm:text-xl lg:text-2xl text-gray-100 max-w-3xl mx-auto"
             variants={fadeInUp}
           >
-            Lost your business card? No problem, add it online.
+            Generate your own business card online.
           </motion.h2>
 
-          {/* Description */}
+          {/* Description - Changed to light gray for visibility */}
           <motion.p
-            className="mt-4 text-base sm:text-lg text-gray-500 max-w-3xl mx-auto"
+            className="mt-4 text-base sm:text-lg text-gray-200 max-w-3xl mx-auto"
             variants={fadeInUp}
           >
-            Secure your contacts effortlessly. Rip up your business card? Add it here before it’s gone!
+            add your name address email etc and your business card will generate.
           </motion.p>
 
           {/* Call-to-Action Buttons */}
@@ -72,16 +74,16 @@ const Hero = () => {
             variants={fadeInUp}
           >
             <Link
-              to="/Home"
+              to="/cards/create"
               className="relative bg-gradient-to-r from-blue-600 to-blue-800 py-3 px-8 rounded-lg text-white font-semibold shadow-lg hover:shadow-xl transition duration-300 ease-in-out transform hover:scale-105"
               aria-label="View business cards"
             >
-              View Cards
+              Generate Your Business Card
               <span className="ml-2">→</span>
             </Link>
             <Link
               to="/about"
-              className="relative bg-transparent py-3 px-8 rounded-lg border-2 border-blue-600 text-blue-600 font-semibold hover:bg-blue-600 hover:text-white transition duration-300 ease-in-out transform hover:scale-105"
+              className="relative bg-transparent py-3 px-8 rounded-lg border-2 border-white text-white font-semibold hover:bg-white hover:text-blue-600 transition duration-300 ease-in-out transform hover:scale-105"
               aria-label="Frequently Asked Questions"
             >
               FAQ
@@ -92,13 +94,13 @@ const Hero = () => {
 
         {/* Scroll Down Indicator */}
         <motion.div
-          className="absolute bottom-8"
+          className="absolute bottom-8 z-10"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
         >
           <svg
-            className="w-6 h-6 text-gray-400"
+            className="w-6 h-6 text-white"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -122,6 +124,8 @@ const Hero = () => {
         transition={{ duration: 0.8 }}
       >
         <Sliders />
+        <HowItWorks />
+        <CreateLogo />
         <Reviews />
         <Footer />
       </motion.div>
