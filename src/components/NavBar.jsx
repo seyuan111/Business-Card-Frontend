@@ -176,6 +176,7 @@ const NavBar = () => {
     { path: '/', label: 'Home' },
     { path: '/Home', label: 'View Cards' },
     { path: '/cards/create', label: 'Add Card' },
+    { path: '/generate-card', label: 'Make Card' },
   ];
 
   return (
