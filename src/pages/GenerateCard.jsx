@@ -3,6 +3,7 @@ import NavBar from '../components/NavBar';
 import BackButton from '../components/BackButton';
 import { isEmail } from '../utils/email';
 import BusinessCardNextGen from '../assets/BusinessCardNextGen.jpeg';
+import { Link } from 'react-router-dom';
 
 const GenerateCard = () => {
   const [name, setName] = useState('');
@@ -15,6 +16,29 @@ const GenerateCard = () => {
   const [logoPreview, setLogoPreview] = useState(''); // data URL for cross-window printing
   const [generated, setGenerated] = useState(false);
   const [design, setDesign] = useState('classic'); // classic | modern | ocean | minimal
+
+    const saveCardToStorage = () => {
+    const card = {
+      id: Date.now(),
+      name,
+      address,
+      email,
+      occupation,
+      contact,
+      slogan,
+      logoPreview,
+      design,
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      const existing = JSON.parse(localStorage.getItem('generatedCards') || '[]');
+      existing.unshift(card); // newest first
+      localStorage.setItem('generatedCards', JSON.stringify(existing));
+    } catch (err) {
+      console.error('Failed to save card', err);
+    }
+  };
 
   const validEmail = isEmail(email);
   const emailError = email && !validEmail ? 'Please enter a valid email address.' : '';
@@ -55,6 +79,7 @@ const GenerateCard = () => {
   const handleGenerate = () => {
     if (!canGenerate) return;
     setGenerated(true);
+    saveCardToStorage();
   };
 
   const getDesignStyles = () => {
@@ -364,24 +389,34 @@ const GenerateCard = () => {
             </div>
           </div>
 
-          <button
-            className={`w-full mt-6 py-2 text-white font-semibold rounded-lg ${
-              canGenerate ? 'bg-sky-500 hover:bg-sky-600' : 'bg-gray-400 cursor-not-allowed'
-            }`}
-            onClick={handleGenerate}
-            disabled={!canGenerate}
-          >
-            Generate Card
-          </button>
+        <button
+          className={`w-full mt-6 py-2 text-white font-semibold rounded-lg ${
+            canGenerate ? 'bg-sky-500 hover:bg-sky-600' : 'bg-gray-400 cursor-not-allowed'
+          }`}
+          onClick={handleGenerate}
+          disabled={!canGenerate}
+        >
+          Preview Card
+        </button>
 
-          {generated && (
+        {generated && (
+          <>
             <button
               className="w-full mt-3 py-2 text-white font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-700"
               onClick={handleDownloadPdf}
             >
               Download as PDF
             </button>
-          )}
+
+            {/* NEW: link to GetCards page */}
+            <Link
+              to="/get-cards"
+              className="block w-full mt-3 py-2 text-center font-semibold rounded-lg bg-white/90 text-sky-700 hover:bg-white"
+            >
+              View My Cards
+            </Link>
+          </>
+        )}
         </div>
       </div>
     </div>

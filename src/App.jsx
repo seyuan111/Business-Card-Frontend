@@ -13,6 +13,7 @@ import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import Settings from './pages/Settings'
 import GenerateCard from './pages/GenerateCard'
+import GetCards from './pages/GetCards'
 
 const App = () => {
   return (
@@ -30,6 +31,7 @@ const App = () => {
       <Route path="/forgot-password" element={<ForgotPassword />}></Route>
       <Route path="/reset-password/:token" element={<ResetPassword />}></Route>
       <Route path="/generate-card" element={<GenerateCard />}></Route>
+      <Route path="/get-cards" element={<GetCards />}></Route>
     </Routes>
   );
 };
