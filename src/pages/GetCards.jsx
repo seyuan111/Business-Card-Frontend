@@ -2,7 +2,65 @@
 import React, { useEffect, useState } from 'react';
 import NavBar from '../components/NavBar';
 import BackButton from '../components/BackButton';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+
+const CARD_THEMES = {
+  classic: {
+    base: 'bg-gradient-to-br from-[#5e2a10] via-[#8b4a1e] to-[#2c1208] text-white',
+    accentElements: [
+      '-top-8 -right-8 w-32 h-32 bg-white/10 rounded-full blur-2xl',
+      'top-8 right-10 w-16 h-16 border border-white/40 rounded-full',
+      '-bottom-6 left-10 w-28 h-28 bg-amber-500/30 rounded-full blur-xl',
+    ],
+    label: 'text-amber-100/80',
+    sub: 'text-white/80',
+    heart: 'text-white',
+    logoBg: 'bg-white/10 border-white/30',
+    logoText: 'text-white/70',
+  },
+  modern: {
+    base: 'bg-gradient-to-r from-[#f5e0c3] via-[#f0c48a] to-[#b3521d] text-slate-900',
+    accentElements: [
+      '-top-8 right-10 w-32 h-32 bg-white/40 rounded-full blur-2xl',
+      'bottom-0 left-0 w-36 h-36 bg-[#9f592c]/30 rounded-tr-[80px]',
+      'top-0 left-6 w-12 h-12 border-2 border-[#b3521d]/30 rounded-full',
+    ],
+    label: 'text-[#8a4318]',
+    sub: 'text-[#7a5131]',
+    heart: 'text-[#8a4318]',
+    logoBg: 'bg-white/60 border-[#8a4318]/30',
+    logoText: 'text-[#8a4318]',
+  },
+  ocean: {
+    base: 'bg-gradient-to-br from-[#003843] via-[#015f63] to-[#0f2d3a] text-white',
+    accentElements: [
+      '-top-6 left-4 w-24 h-24 border border-white/30 rounded-full',
+      '-bottom-6 right-0 w-32 h-32 bg-cyan-400/40 rounded-tl-[120px]',
+      'top-10 right-12 w-12 h-12 bg-white/20 rounded-full',
+    ],
+    label: 'text-cyan-100/80',
+    sub: 'text-white/70',
+    heart: 'text-white',
+    logoBg: 'bg-white/10 border-white/30',
+    logoText: 'text-white/70',
+  },
+  minimal: {
+    base: 'bg-white text-slate-900 border border-slate-200',
+    accentElements: [
+      'top-5 right-5 w-12 h-12 border border-slate-200 rounded-full',
+      'bottom-0 left-0 w-full h-10 bg-slate-100',
+    ],
+    label: 'text-slate-500',
+    sub: 'text-slate-500',
+    heart: 'text-slate-400',
+    logoBg: 'bg-slate-100 border-slate-200',
+    logoText: 'text-slate-500',
+    badge: { label: 'Free', bg: 'bg-emerald-100 text-emerald-700' },
+  },
+};
+
+const getCardTheme = (design = 'classic') =>
+  CARD_THEMES[design] || CARD_THEMES.classic;
 
 // helper to build the print window for a saved card
 const openPrintWindowForCard = (card) => {
@@ -127,6 +185,7 @@ const openPrintWindowForCard = (card) => {
 const GetCards = () => {
   const [cards, setCards] = useState([]);
   const [query, setQuery] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     try {
@@ -148,21 +207,15 @@ const GetCards = () => {
     );
   });
 
-  const getBgClass = (design) => {
-    switch (design) {
-      case 'modern':
-        return 'bg-gradient-to-br from-purple-600 to-indigo-800 text-white';
-      case 'ocean':
-        return 'bg-gradient-to-br from-teal-600 to-cyan-700 text-white';
-      case 'minimal':
-        return 'bg-white border border-gray-200 text-gray-900';
-      default:
-        return 'bg-gradient-to-br from-sky-700 to-sky-900 text-white';
-    }
-  };
+  const heartButtonBase = (theme) =>
+    theme.heart === 'text-slate-400'
+      ? 'bg-slate-100 border border-slate-200'
+      : 'bg-white/15 border border-white/30';
 
-  const getSubTextClass = (design) =>
-    design === 'minimal' ? 'text-gray-600' : 'text-white/80';
+  const handleCardClick = (cardId) => {
+    if (!cardId) return;
+    navigate(`/edit-card/${cardId}`);
+  };
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -197,108 +250,179 @@ const GetCards = () => {
           </div>
         </div>
 
-        {filteredCards.length === 0 ? (
-          <div className="text-center text-gray-500 mt-10">
-            <p>No cards found.</p>
-            <p className="text-sm mt-1">
-              Generate a card first, then it will appear here.
-            </p>
-          </div>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredCards.map((card) => (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <Link
+            to="/generate-card"
+            className="min-h-[220px] rounded-3xl border-2 border-dashed border-slate-300 bg-white px-6 py-6 flex flex-col justify-between hover:border-sky-500 hover:bg-sky-50 transition group"
+          >
+            <div>
+              <div className="w-14 h-14 rounded-2xl border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-500 mb-4">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  className="w-6 h-6"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 5v11m0 0 4-4m-4 4-4-4m-3 8h14a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2h-2.5"
+                  />
+                </svg>
+              </div>
+              <p className="text-lg font-semibold text-slate-900">
+                Upload your logo
+              </p>
+              <p className="text-sm text-slate-500 mt-1">
+                Drop your file here or click to upload
+              </p>
+            </div>
+            <span className="text-sm font-semibold text-sky-600 group-hover:underline">
+              Start creating ->
+            </span>
+          </Link>
+
+          {filteredCards.map((card) => {
+            const theme = getCardTheme(card.design);
+            const name = card.name || 'Full Name';
+            const title = card.occupation || 'Founder & CEO';
+            const email = card.email || 'john@email.com';
+            const phone = card.contact || '(555) 333-9212';
+            const slogan = card.slogan || 'Coffee Brewery';
+
+            return (
               <div
                 key={card.id}
-                className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col"
+                className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col"
               >
-                <div className="p-3">
+                <div className="p-4">
                   <div
-                    className={`rounded-xl shadow overflow-hidden ${getBgClass(
-                      card.design
-                    )}`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleCardClick(card.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') handleCardClick(card.id);
+                    }}
+                    className={`relative rounded-[24px] overflow-hidden p-5 min-h-[220px] cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 ${theme.base}`}
                   >
-                    <div className="p-4 flex items-center gap-3">
-                      <div className="flex flex-col items-center">
-                        {card.logoPreview ? (
-                          <img
-                            src={card.logoPreview}
-                            alt="Logo"
-                            className={`w-12 h-12 rounded-md object-cover ${
-                              card.design === 'minimal'
-                                ? 'bg-gray-100'
-                                : 'bg-white/10'
-                            }`}
-                          />
-                        ) : (
+                    {theme.accentElements?.map((accent, idx) => (
+                      <span
+                        key={idx}
+                        aria-hidden="true"
+                        className={`pointer-events-none absolute ${accent}`}
+                      />
+                    ))}
+                    <div className="relative z-10 flex flex-col h-full gap-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex flex-col gap-2">
+                          {theme.badge && (
+                            <span
+                              className={`inline-flex px-2 py-0.5 text-[10px] tracking-[0.3em] uppercase font-semibold rounded-full ${theme.badge.bg}`}
+                            >
+                              {theme.badge.label}
+                            </span>
+                          )}
                           <div
-                            className={`w-12 h-12 rounded-md flex items-center justify-center text-[10px] opacity-70 ${
-                              card.design === 'minimal'
-                                ? 'bg-gray-100 text-gray-600'
-                                : 'bg-white/10 text-white'
-                            }`}
+                            className={`h-16 w-16 rounded-2xl border flex items-center justify-center overflow-hidden ${theme.logoBg}`}
                           >
-                            No Logo
+                            {card.logoPreview ? (
+                              <img
+                                src={card.logoPreview}
+                                alt="Logo"
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <span
+                                className={`text-[10px] font-semibold tracking-[0.3em] ${theme.logoText}`}
+                              >
+                                LOGO
+                              </span>
+                            )}
                           </div>
-                        )}
-                        {card.slogan && (
-                          <div
-                            className={`mt-1 text-[10px] italic text-center ${getSubTextClass(
-                              card.design
-                            )}`}
+                          <p
+                            className={`text-xs font-semibold tracking-[0.3em] uppercase ${theme.sub}`}
                           >
-                            “{card.slogan}”
-                          </div>
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-base font-bold truncate">
-                          {card.name || 'Your Name'}
+                            {slogan}
+                          </p>
                         </div>
-                        <div
-                          className={`text-xs truncate ${getSubTextClass(
-                            card.design
-                          )}`}
+                        <button
+                          type="button"
+                          className={`p-2 rounded-full ${heartButtonBase(theme)}`}
                         >
-                          {card.occupation || 'Your Title'}
-                        </div>
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.6"
+                            className={`w-5 h-5 ${theme.heart}`}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M12 20.25s-6.75-4.2-6.75-8.7A3.75 3.75 0 0 1 9 7.8c1.2 0 2.25.6 3 1.5.75-.9 1.8-1.5 3-1.5a3.75 3.75 0 0 1 3.75 3.75c0 4.5-6.75 8.7-6.75 8.7Z"
+                            />
+                          </svg>
+                        </button>
                       </div>
-                    </div>
-                    <div className="px-4 pb-4 text-xs">
-                      <div className="flex items-center gap-1">
-                        <span className={getSubTextClass(card.design)}>
-                          Email:
-                        </span>
-                        <span className="truncate">
-                          {card.email || '—'}
-                        </span>
+
+                      <div className="space-y-1 text-left">
+                        <p className="text-2xl font-black leading-tight">{name}</p>
+                        <p className={`text-xs uppercase tracking-[0.35em] ${theme.sub}`}>
+                          {title}
+                        </p>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <span className={getSubTextClass(card.design)}>
-                          Phone:
-                        </span>
-                        <span>{card.contact || '—'}</span>
-                      </div>
-                      {card.address && (
-                        <div className="flex items-start gap-1">
-                          <span className={getSubTextClass(card.design)}>
-                            Address:
+
+                      <div className="grid gap-2 text-sm mt-auto">
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${theme.label}`}
+                          >
+                            Email
                           </span>
-                          <span className="truncate">{card.address}</span>
+                          <span className="truncate">{email}</span>
                         </div>
-                      )}
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${theme.label}`}
+                          >
+                            Phone
+                          </span>
+                          <span>{phone}</span>
+                        </div>
+                        {card.address && (
+                          <div className="flex items-center gap-3">
+                            <span
+                              className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${theme.label}`}
+                            >
+                              Address
+                            </span>
+                            <span className="truncate">{card.address}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div className="px-3 pb-3 flex gap-2 mt-auto">
+                <div className="px-4 pb-4 flex gap-2 mt-auto">
                   <button
                     onClick={() => openPrintWindowForCard(card)}
-                    className="flex-1 py-1.5 text-xs font-semibold rounded-md bg-emerald-600 text-white hover:bg-emerald-700"
+                    className="flex-1 py-2 text-xs font-semibold rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition"
                   >
                     Print / Download
                   </button>
                 </div>
               </div>
-            ))}
+            );
+          })}
+        </div>
+
+        {filteredCards.length === 0 && (
+          <div className="text-center text-gray-500 mt-8">
+            <p>No cards yet.</p>
+            <p className="text-sm mt-1">
+              Generate a card first, then it will appear alongside the templates above.
+            </p>
           </div>
         )}
       </div>
