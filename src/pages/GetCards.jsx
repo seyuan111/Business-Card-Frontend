@@ -212,6 +212,21 @@ const GetCards = () => {
       ? 'bg-slate-100 border border-slate-200'
       : 'bg-white/15 border border-white/30';
 
+  const handleDeleteCard = (cardId) => {
+    const confirmDelete = window.confirm('Delete this card?');
+    if (!confirmDelete) return;
+
+    try {
+      setCards((prev) => {
+        const updated = prev.filter((card) => card.id !== cardId);
+        localStorage.setItem('generatedCards', JSON.stringify(updated));
+        return updated;
+      });
+    } catch (err) {
+      console.error('Failed to delete card', err);
+    }
+  };
+
   const handleCardClick = (cardId) => {
     if (!cardId) return;
     navigate(`/edit-card/${cardId}`);
@@ -289,7 +304,9 @@ const GetCards = () => {
             const title = card.occupation || 'Founder & CEO';
             const email = card.email || 'john@email.com';
             const phone = card.contact || '(555) 333-9212';
-            const slogan = card.slogan || 'Coffee Brewery';
+            const slogan = (card.slogan || '').trim();
+            const hasSlogan = Boolean(slogan);
+            const hasLogo = Boolean(card.logoPreview);
 
             return (
               <div
@@ -313,43 +330,39 @@ const GetCards = () => {
                         className={`pointer-events-none absolute ${accent}`}
                       />
                     ))}
-                    <div className="relative z-10 flex flex-col h-full gap-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex flex-col gap-2">
-                          {theme.badge && (
-                            <span
-                              className={`inline-flex px-2 py-0.5 text-[10px] tracking-[0.3em] uppercase font-semibold rounded-full ${theme.badge.bg}`}
+                      <div className="relative z-10 flex flex-col h-full gap-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex flex-col gap-2">
+                            {theme.badge && (
+                              <span
+                                className={`inline-flex px-2 py-0.5 text-[10px] tracking-[0.3em] uppercase font-semibold rounded-full ${theme.badge.bg}`}
+                              >
+                                {theme.badge.label}
+                              </span>
+                            )}
+                          {hasLogo && (
+                            <div
+                              className={`h-16 w-16 rounded-2xl border flex items-center justify-center overflow-hidden ${theme.logoBg}`}
                             >
-                              {theme.badge.label}
-                            </span>
-                          )}
-                          <div
-                            className={`h-16 w-16 rounded-2xl border flex items-center justify-center overflow-hidden ${theme.logoBg}`}
-                          >
-                            {card.logoPreview ? (
                               <img
                                 src={card.logoPreview}
                                 alt="Logo"
                                 className="h-full w-full object-cover"
                               />
-                            ) : (
-                              <span
-                                className={`text-[10px] font-semibold tracking-[0.3em] ${theme.logoText}`}
-                              >
-                                LOGO
-                              </span>
-                            )}
+                            </div>
+                          )}
+                          {hasSlogan && (
+                            <p
+                              className={`text-xs font-semibold tracking-[0.3em] uppercase ${theme.sub}`}
+                            >
+                              {slogan}
+                            </p>
+                          )}
                           </div>
-                          <p
-                            className={`text-xs font-semibold tracking-[0.3em] uppercase ${theme.sub}`}
+                          <button
+                            type="button"
+                            className={`p-2 rounded-full ${heartButtonBase(theme)}`}
                           >
-                            {slogan}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          className={`p-2 rounded-full ${heartButtonBase(theme)}`}
-                        >
                           <svg
                             viewBox="0 0 24 24"
                             fill="none"
@@ -405,6 +418,13 @@ const GetCards = () => {
                   </div>
                 </div>
                 <div className="px-4 pb-4 flex gap-2 mt-auto">
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteCard(card.id)}
+                    className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100"
+                  >
+                    Delete
+                  </button>
                   <button
                     onClick={() => openPrintWindowForCard(card)}
                     className="flex-1 py-2 text-xs font-semibold rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition"
