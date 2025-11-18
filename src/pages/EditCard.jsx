@@ -3,29 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import NavBar from '../components/NavBar';
 import BackButton from '../components/BackButton';
 import { isEmail } from '../utils/email';
-
-const DESIGN_OPTIONS = [
-  {
-    id: 'classic',
-    label: 'Classic',
-    swatch: 'bg-gradient-to-br from-[#5e2a10] via-[#8b4a1e] to-[#2c1208]',
-  },
-  {
-    id: 'modern',
-    label: 'Modern',
-    swatch: 'bg-gradient-to-r from-[#f5e0c3] via-[#f0c48a] to-[#b3521d]',
-  },
-  {
-    id: 'ocean',
-    label: 'Ocean',
-    swatch: 'bg-gradient-to-br from-[#003843] via-[#015f63] to-[#0f2d3a]',
-  },
-  {
-    id: 'minimal',
-    label: 'Minimal',
-    swatch: 'bg-white border border-slate-200',
-  },
-];
+import { CARD_THEME_OPTIONS } from '../utils/cardThemes';
 
 const defaultForm = {
   name: '',
@@ -296,13 +274,13 @@ const EditCard = () => {
                   Card design
                 </p>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {DESIGN_OPTIONS.map((option) => {
-                    const isActive = form.design === option.id;
+                  {CARD_THEME_OPTIONS.map((option) => {
+                    const isActive = form.design === option.key;
                     return (
                       <button
-                        key={option.id}
+                        key={option.key}
                         type="button"
-                        onClick={() => setForm((prev) => ({ ...prev, design: option.id }))}
+                        onClick={() => setForm((prev) => ({ ...prev, design: option.key }))}
                         className={`rounded-2xl border px-2 py-3 text-center text-xs font-semibold transition ${
                           isActive
                             ? 'border-sky-500 bg-sky-50 text-sky-600'
@@ -310,7 +288,7 @@ const EditCard = () => {
                         }`}
                       >
                         <span
-                          className={`block h-16 rounded-xl mb-2 ${option.swatch}`}
+                          className={`block h-16 rounded-xl mb-2 ${option.swatch || ''}`}
                         />
                         {option.label}
                       </button>

@@ -4,6 +4,7 @@ import NavBar from '../components/NavBar';
 import BackButton from '../components/BackButton';
 import { isEmail } from '../utils/email';
 import BusinessCardNextGen from '../assets/BusinessCardNextGen.jpeg';
+import { CARD_THEME_OPTIONS, getCardTheme } from '../utils/cardThemes';
 
 const GenerateCard = () => {
   const [name, setName] = useState('');
@@ -14,9 +15,10 @@ const GenerateCard = () => {
   const [slogan, setSlogan] = useState('');
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState('');
-  const [design, setDesign] = useState('classic'); // classic | modern | ocean | minimal
+  const [design, setDesign] = useState('classic');
 
   const navigate = useNavigate();
+  const theme = getCardTheme(design);
 
   const saveCardToStorage = () => {
     const card = {
@@ -34,7 +36,7 @@ const GenerateCard = () => {
 
     try {
       const existing = JSON.parse(localStorage.getItem('generatedCards') || '[]');
-      existing.unshift(card); // newest first
+      existing.unshift(card);
       localStorage.setItem('generatedCards', JSON.stringify(existing));
     } catch (err) {
       console.error('Failed to save card', err);
@@ -85,7 +87,6 @@ const GenerateCard = () => {
 
   return (
     <div className="relative min-h-screen">
-      {/* Background Image with overlay */}
       <div className="absolute inset-0 -z-10">
         <img
           src={BusinessCardNextGen}
@@ -211,12 +212,7 @@ const GenerateCard = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-2">Card Design</p>
                 <div className="flex flex-wrap gap-2">
-                  {[
-                    { key: 'classic', label: 'Classic' },
-                    { key: 'modern', label: 'Modern' },
-                    { key: 'ocean', label: 'Ocean' },
-                    { key: 'minimal', label: 'Minimal' },
-                  ].map((opt) => (
+                  {CARD_THEME_OPTIONS.map((opt) => (
                     <button
                       key={opt.key}
                       onClick={() => setDesign(opt.key)}
@@ -230,6 +226,79 @@ const GenerateCard = () => {
                       {opt.label}
                     </button>
                   ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Live preview */}
+          <div className="mt-4">
+            <p className="text-sm font-semibold text-gray-700 mb-2">Live Preview</p>
+            <div className="border-2 border-dashed border-gray-200 rounded-xl p-4">
+              <div
+                className={`mx-auto max-w-lg rounded-xl shadow-xl overflow-hidden ${theme.base}`}
+              >
+                <div className="p-5 flex items-center gap-4">
+                  {logoPreview && (
+                    <div
+                      className={`w-16 h-16 rounded-md overflow-hidden flex items-center justify-center ${
+                        theme.logoBg || ''
+                      }`}
+                    >
+                      <img
+                        src={logoPreview}
+                        alt="Logo"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <div className="text-xl font-bold truncate">
+                      {name || 'Your Name'}
+                    </div>
+                    <div className={`text-sm truncate ${theme.sub || 'text-white/80'}`}>
+                      {occupation || 'Your Title'}
+                    </div>
+                    {slogan.trim() && (
+                      <div className={`text-xs italic ${theme.sub || 'text-white/80'}`}>
+                        "{slogan.trim()}"
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="px-5 pb-5 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className={theme.sub || 'text-white/80'}>Email:</span>
+                    <span
+                      className={`truncate ${
+                        design === 'minimal' ? 'text-gray-800' : 'text-white'
+                      }`}
+                    >
+                      {email || 'you@example.com'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={theme.sub || 'text-white/80'}>Phone:</span>
+                    <span
+                      className={`truncate ${
+                        design === 'minimal' ? 'text-gray-800' : 'text-white'
+                      }`}
+                    >
+                      {contact || '(111) 222-5555'}
+                    </span>
+                  </div>
+                  {address && (
+                    <div className="flex items-start gap-2">
+                      <span className={theme.sub || 'text-white/80'}>Address:</span>
+                      <span
+                        className={`truncate ${
+                          design === 'minimal' ? 'text-gray-800' : 'text-white'
+                        }`}
+                      >
+                        {address}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -3,64 +3,7 @@ import React, { useEffect, useState } from 'react';
 import NavBar from '../components/NavBar';
 import BackButton from '../components/BackButton';
 import { Link, useNavigate } from 'react-router-dom';
-
-const CARD_THEMES = {
-  classic: {
-    base: 'bg-gradient-to-br from-[#5e2a10] via-[#8b4a1e] to-[#2c1208] text-white',
-    accentElements: [
-      '-top-8 -right-8 w-32 h-32 bg-white/10 rounded-full blur-2xl',
-      'top-8 right-10 w-16 h-16 border border-white/40 rounded-full',
-      '-bottom-6 left-10 w-28 h-28 bg-amber-500/30 rounded-full blur-xl',
-    ],
-    label: 'text-amber-100/80',
-    sub: 'text-white/80',
-    heart: 'text-white',
-    logoBg: 'bg-white/10 border-white/30',
-    logoText: 'text-white/70',
-  },
-  modern: {
-    base: 'bg-gradient-to-r from-[#f5e0c3] via-[#f0c48a] to-[#b3521d] text-slate-900',
-    accentElements: [
-      '-top-8 right-10 w-32 h-32 bg-white/40 rounded-full blur-2xl',
-      'bottom-0 left-0 w-36 h-36 bg-[#9f592c]/30 rounded-tr-[80px]',
-      'top-0 left-6 w-12 h-12 border-2 border-[#b3521d]/30 rounded-full',
-    ],
-    label: 'text-[#8a4318]',
-    sub: 'text-[#7a5131]',
-    heart: 'text-[#8a4318]',
-    logoBg: 'bg-white/60 border-[#8a4318]/30',
-    logoText: 'text-[#8a4318]',
-  },
-  ocean: {
-    base: 'bg-gradient-to-br from-[#003843] via-[#015f63] to-[#0f2d3a] text-white',
-    accentElements: [
-      '-top-6 left-4 w-24 h-24 border border-white/30 rounded-full',
-      '-bottom-6 right-0 w-32 h-32 bg-cyan-400/40 rounded-tl-[120px]',
-      'top-10 right-12 w-12 h-12 bg-white/20 rounded-full',
-    ],
-    label: 'text-cyan-100/80',
-    sub: 'text-white/70',
-    heart: 'text-white',
-    logoBg: 'bg-white/10 border-white/30',
-    logoText: 'text-white/70',
-  },
-  minimal: {
-    base: 'bg-white text-slate-900 border border-slate-200',
-    accentElements: [
-      'top-5 right-5 w-12 h-12 border border-slate-200 rounded-full',
-      'bottom-0 left-0 w-full h-10 bg-slate-100',
-    ],
-    label: 'text-slate-500',
-    sub: 'text-slate-500',
-    heart: 'text-slate-400',
-    logoBg: 'bg-slate-100 border-slate-200',
-    logoText: 'text-slate-500',
-    badge: { label: 'Free', bg: 'bg-emerald-100 text-emerald-700' },
-  },
-};
-
-const getCardTheme = (design = 'classic') =>
-  CARD_THEMES[design] || CARD_THEMES.classic;
+import { CARD_THEMES, getCardTheme } from '../utils/cardThemes';
 
 // helper to build the print window for a saved card
 const openPrintWindowForCard = (card) => {
@@ -76,40 +19,14 @@ const openPrintWindowForCard = (card) => {
     design = 'classic',
   } = card;
 
-  const getDesignStyles = () => {
-    switch (design) {
-      case 'modern':
-        return {
-          background: 'linear-gradient(135deg, #7c3aed, #3730a3)',
-          text: '#ffffff',
-          subText: 'rgba(255,255,255,0.8)',
-          border: 'none',
-        };
-      case 'ocean':
-        return {
-          background: 'linear-gradient(135deg, #0d9488, #0e7490)',
-          text: '#ffffff',
-          subText: 'rgba(255,255,255,0.85)',
-          border: 'none',
-        };
-      case 'minimal':
-        return {
-          background: '#ffffff',
-          text: '#111827',
-          subText: '#6b7280',
-          border: '1px solid #e5e7eb',
-        };
-      default:
-        return {
-          background: 'linear-gradient(135deg, #0369a1, #0c4a6e)',
-          text: '#ffffff',
-          subText: 'rgba(255,255,255,0.8)',
-          border: 'none',
-        };
-    }
-  };
-
-  const styles = getDesignStyles();
+  const theme = getCardTheme(design);
+  const styles =
+    theme.print || {
+      background: 'linear-gradient(135deg, #0369a1, #0c4a6e)',
+      text: '#ffffff',
+      subText: 'rgba(255,255,255,0.8)',
+      border: 'none',
+    };
   const safe = (v) => String(v || '');
 
   const html = `<!doctype html>
@@ -238,7 +155,6 @@ const GetCards = () => {
       <div className="pt-24 max-w-6xl mx-auto px-4 pb-10">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <BackButton />
             <h1 className="text-2xl font-bold text-slate-900">My Cards</h1>
           </div>
           <Link
@@ -265,7 +181,7 @@ const GetCards = () => {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
           <Link
             to="/generate-card"
             className="min-h-[220px] rounded-3xl border-2 border-dashed border-slate-300 bg-white px-6 py-6 flex flex-col justify-between hover:border-sky-500 hover:bg-sky-50 transition group"
@@ -321,48 +237,43 @@ const GetCards = () => {
                     onKeyDown={(event) => {
                       if (event.key === 'Enter') handleCardClick(card.id);
                     }}
-                    className={`relative rounded-[24px] overflow-hidden p-5 min-h-[220px] cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 ${theme.base}`}
+                    className={`relative overflow-hidden rounded-xl shadow-xl ${theme.base} px-5 py-4 min-h-[200px] cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500`}
                   >
-                    {theme.accentElements?.map((accent, idx) => (
-                      <span
-                        key={idx}
-                        aria-hidden="true"
-                        className={`pointer-events-none absolute ${accent}`}
-                      />
-                    ))}
-                      <div className="relative z-10 flex flex-col h-full gap-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex flex-col gap-2">
-                            {theme.badge && (
-                              <span
-                                className={`inline-flex px-2 py-0.5 text-[10px] tracking-[0.3em] uppercase font-semibold rounded-full ${theme.badge.bg}`}
-                              >
-                                {theme.badge.label}
-                              </span>
-                            )}
-                          {hasLogo && (
+                    <div className="flex flex-col gap-4 h-full">
+                      <div className="flex items-start gap-4">
+                        {hasLogo && (
+                          <div className="flex flex-col items-center gap-2">
                             <div
-                              className={`h-16 w-16 rounded-2xl border flex items-center justify-center overflow-hidden ${theme.logoBg}`}
+                              className={`w-16 h-16 rounded-md overflow-hidden flex items-center justify-center ${
+                                theme.logoBg || ''
+                              }`}
                             >
                               <img
                                 src={card.logoPreview}
                                 alt="Logo"
-                                className="h-full w-full object-cover"
+                                className="w-full h-full object-cover"
                               />
                             </div>
-                          )}
-                          {hasSlogan && (
-                            <p
-                              className={`text-xs font-semibold tracking-[0.3em] uppercase ${theme.sub}`}
-                            >
-                              {slogan}
-                            </p>
-                          )}
+                            {hasSlogan && (
+                              <p
+                                className={`text-xs italic truncate whitespace-nowrap max-w-[180px] ${theme.sub || 'text-white/80'}`}
+                                title={slogan}
+                              >
+                                "{slogan}"
+                              </p>
+                            )}
                           </div>
-                          <button
-                            type="button"
-                            className={`p-2 rounded-full ${heartButtonBase(theme)}`}
-                          >
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-xl font-bold truncate">{name}</p>
+                          <p className={`text-sm truncate ${theme.sub || 'text-white/80'}`}>
+                            {title}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          className={`p-2 rounded-full ${heartButtonBase(theme)} ml-auto`}
+                        >
                           <svg
                             viewBox="0 0 24 24"
                             fill="none"
@@ -379,38 +290,37 @@ const GetCards = () => {
                         </button>
                       </div>
 
-                      <div className="space-y-1 text-left">
-                        <p className="text-2xl font-black leading-tight">{name}</p>
-                        <p className={`text-xs uppercase tracking-[0.35em] ${theme.sub}`}>
-                          {title}
-                        </p>
-                      </div>
-
-                      <div className="grid gap-2 text-sm mt-auto">
-                        <div className="flex items-center gap-3">
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className={theme.sub || 'text-white/80'}>Email:</span>
                           <span
-                            className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${theme.label}`}
+                            className={`truncate ${
+                              card.design === 'minimal' ? 'text-gray-800' : 'text-white'
+                            }`}
                           >
-                            Email
+                            {email}
                           </span>
-                          <span className="truncate">{email}</span>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <span className={theme.sub || 'text-white/80'}>Phone:</span>
                           <span
-                            className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${theme.label}`}
+                            className={`truncate ${
+                              card.design === 'minimal' ? 'text-gray-800' : 'text-white'
+                            }`}
                           >
-                            Phone
+                            {phone}
                           </span>
-                          <span>{phone}</span>
                         </div>
                         {card.address && (
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-start gap-2">
+                            <span className={theme.sub || 'text-white/80'}>Address:</span>
                             <span
-                              className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${theme.label}`}
+                              className={`truncate ${
+                                card.design === 'minimal' ? 'text-gray-800' : 'text-white'
+                              }`}
                             >
-                              Address
+                              {card.address}
                             </span>
-                            <span className="truncate">{card.address}</span>
                           </div>
                         )}
                       </div>
