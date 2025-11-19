@@ -15,6 +15,7 @@ import Settings from './pages/Settings'
 import GenerateCard from './pages/GenerateCard'
 import GetCards from './pages/GetCards'
 import EditCard from './pages/EditCard'
+import Checkout from './pages/Checkout'
 
 const App = () => {
   return (
@@ -34,6 +35,7 @@ const App = () => {
       <Route path="/generate-card" element={<GenerateCard />}></Route>
       <Route path="/get-cards" element={<GetCards />}></Route>
       <Route path="/edit-card/:id" element={<EditCard />}></Route>
+      <Route path="/checkout" element={<Checkout />}></Route>
     </Routes>
   );
 };

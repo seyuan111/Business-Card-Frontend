@@ -149,6 +149,15 @@ const GetCards = () => {
     navigate(`/edit-card/${cardId}`);
   };
 
+  const handleCheckout = (card) => {
+    try {
+      localStorage.setItem('checkoutCard', JSON.stringify(card));
+    } catch (err) {
+      console.error('Failed to save checkout card', err);
+    }
+    navigate('/checkout');
+  };
+
   return (
     <div className="min-h-screen bg-slate-100">
       <NavBar />
@@ -210,7 +219,7 @@ const GetCards = () => {
               </p>
             </div>
             <span className="text-sm font-semibold text-sky-600 group-hover:underline">
-              Start creating ->
+              Start creating
             </span>
           </Link>
 
@@ -237,12 +246,58 @@ const GetCards = () => {
                     onKeyDown={(event) => {
                       if (event.key === 'Enter') handleCardClick(card.id);
                     }}
-                    className={`relative overflow-hidden rounded-xl shadow-xl ${theme.base} px-5 py-4 min-h-[200px] cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500`}
+                    className={`relative overflow-hidden rounded-xl shadow-xl ${theme.base} px-5 py-4 h-[240px] cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500`}
                   >
-                    <div className="flex flex-col gap-4 h-full">
-                      <div className="flex items-start gap-4">
-                        {hasLogo && (
-                          <div className="flex flex-col items-center gap-2">
+                    <div className="flex h-full gap-3">
+                      <div className="flex-1 flex flex-col">
+                        <div className="flex items-start gap-3">
+                          <div className="min-w-0">
+                            <p className="text-xl font-bold truncate">{name}</p>
+                            <p className={`text-sm truncate ${theme.sub || 'text-white/80'}`}>
+                              {title}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-auto space-y-1.5 text-sm">
+                          <div className="flex items-center gap-2">
+                            <span className={theme.sub || 'text-white/80'}>Phone:</span>
+                            <span
+                              className={`truncate ${
+                                card.design === 'minimal' ? 'text-gray-800' : 'text-white'
+                              }`}
+                            >
+                              {phone}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={theme.sub || 'text-white/80'}>Email:</span>
+                            <span
+                              className={`truncate ${
+                                card.design === 'minimal' ? 'text-gray-800' : 'text-white'
+                              }`}
+                            >
+                              {email}
+                            </span>
+                          </div>
+                          {card.address && (
+                            <div className="flex items-start gap-2">
+                              <span className={theme.sub || 'text-white/80'}>Address:</span>
+                              <span
+                                className={`truncate ${
+                                  card.design === 'minimal' ? 'text-gray-800' : 'text-white'
+                                }`}
+                              >
+                                {card.address}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {(hasLogo || hasSlogan) && (
+                        <div className="flex flex-col items-center justify-center gap-2 w-24 shrink-0 text-center">
+                          {hasLogo && (
                             <div
                               className={`w-16 h-16 rounded-md overflow-hidden flex items-center justify-center ${
                                 theme.logoBg || ''
@@ -254,76 +309,17 @@ const GetCards = () => {
                                 className="w-full h-full object-cover"
                               />
                             </div>
-                            {hasSlogan && (
-                              <p
-                                className={`text-xs italic truncate whitespace-nowrap max-w-[180px] ${theme.sub || 'text-white/80'}`}
-                                title={slogan}
-                              >
-                                "{slogan}"
-                              </p>
-                            )}
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <p className="text-xl font-bold truncate">{name}</p>
-                          <p className={`text-sm truncate ${theme.sub || 'text-white/80'}`}>
-                            {title}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          className={`p-2 rounded-full ${heartButtonBase(theme)} ml-auto`}
-                        >
-                          <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.6"
-                            className={`w-5 h-5 ${theme.heart}`}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M12 20.25s-6.75-4.2-6.75-8.7A3.75 3.75 0 0 1 9 7.8c1.2 0 2.25.6 3 1.5.75-.9 1.8-1.5 3-1.5a3.75 3.75 0 0 1 3.75 3.75c0 4.5-6.75 8.7-6.75 8.7Z"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-center gap-2">
-                          <span className={theme.sub || 'text-white/80'}>Email:</span>
-                          <span
-                            className={`truncate ${
-                              card.design === 'minimal' ? 'text-gray-800' : 'text-white'
-                            }`}
-                          >
-                            {email}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className={theme.sub || 'text-white/80'}>Phone:</span>
-                          <span
-                            className={`truncate ${
-                              card.design === 'minimal' ? 'text-gray-800' : 'text-white'
-                            }`}
-                          >
-                            {phone}
-                          </span>
-                        </div>
-                        {card.address && (
-                          <div className="flex items-start gap-2">
-                            <span className={theme.sub || 'text-white/80'}>Address:</span>
-                            <span
-                              className={`truncate ${
-                                card.design === 'minimal' ? 'text-gray-800' : 'text-white'
-                              }`}
+                          )}
+                          {hasSlogan && (
+                            <p
+                              className={`text-[10px] italic truncate max-w-[96px] ${theme.sub || 'text-white/80'}`}
+                              title={slogan}
                             >
-                              {card.address}
-                            </span>
-                          </div>
-                        )}
-                      </div>
+                              "{slogan}"
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -336,7 +332,7 @@ const GetCards = () => {
                     Delete
                   </button>
                   <button
-                    onClick={() => openPrintWindowForCard(card)}
+                    onClick={() => handleCheckout(card)}
                     className="flex-1 py-2 text-xs font-semibold rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition"
                   >
                     Print / Download
