@@ -12,6 +12,7 @@ const defaultForm = {
   email: '',
   address: '',
   slogan: '',
+  website: '',
   design: 'classic',
   logoPreview: '',
 };
@@ -31,6 +32,25 @@ const formatPhoneNumber = (value) => {
   return numbers;
 };
 
+// Website helpers
+const isWebsite = (value = '') => {
+  const v = value.trim();
+  if (!v) return true;
+  const withProtocol = /^https?:\/\//i.test(v) ? v : `https://${v}`;
+  try {
+    const url = new URL(withProtocol);
+    return url.hostname.includes('.');
+  } catch {
+    return false;
+  }
+};
+
+const normalizeWebsite = (value = '') => {
+  const v = value.trim();
+  if (!v) return '';
+  return /^https?:\/\//i.test(v) ? v : `https://${v}`;
+};
+
 const EditCard = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -38,6 +58,7 @@ const EditCard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
+  const [websiteError, setWebsiteError] = useState('');
 
   useEffect(() => {
     try {
@@ -55,6 +76,7 @@ const EditCard = () => {
           slogan: card.slogan || '',
           design: card.design || 'classic',
           logoPreview: card.logoPreview || '',
+          website: card.website || '',
         });
       }
     } catch (err) {
@@ -85,17 +107,31 @@ const EditCard = () => {
     reader.readAsDataURL(file);
   };
 
+  const handleWebsiteBlur = () => {
+    if (!isWebsite(form.website)) {
+      setWebsiteError('Please enter a valid website (e.g., nike.com).');
+    } else {
+      setWebsiteError('');
+      setForm((prev) => ({
+        ...prev,
+        website: normalizeWebsite(prev.website),
+      }));
+    }
+  };
+
   const canSave =
     form.name.trim() &&
     form.contact.trim() &&
     form.email.trim() &&
-    isEmail(form.email);
+    isEmail(form.email) &&
+    isWebsite(form.website);
 
   const handleConfirmEdit = () => {
     if (!canSave) {
       setError('Please fill out name, email, and phone with valid values.');
       return;
     }
+
     setError('');
     try {
       const stored = JSON.parse(localStorage.getItem('generatedCards') || '[]');
@@ -104,17 +140,18 @@ const EditCard = () => {
         setError('Unable to update because this card no longer exists.');
         return;
       }
+
       const updatedCard = {
         ...stored[index],
         ...form,
+        website: normalizeWebsite(form.website),
         updatedAt: new Date().toISOString(),
       };
+
       stored[index] = updatedCard;
       localStorage.setItem('generatedCards', JSON.stringify(stored));
       setStatus('Changes saved!');
-      setTimeout(() => {
-        navigate('/get-cards');
-      }, 900);
+      setTimeout(() => navigate('/get-cards'), 900);
     } catch (err) {
       console.error('Failed to update card', err);
       setError('Something went wrong while saving your edits.');
@@ -161,6 +198,7 @@ const EditCard = () => {
 
         <div className="bg-white rounded-2xl shadow-lg p-6 space-y-6">
           <div className="grid gap-5 md:grid-cols-2">
+            {/* LEFT */}
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-slate-600 flex items-center">
@@ -174,6 +212,7 @@ const EditCard = () => {
                   placeholder="Jane Smith"
                 />
               </div>
+
               <div>
                 <label className="text-sm font-medium text-slate-600">
                   Job Title
@@ -186,6 +225,7 @@ const EditCard = () => {
                   placeholder="Founder & CEO"
                 />
               </div>
+
               <div>
                 <label className="text-sm font-medium text-slate-600 flex items-center">
                   Phone <span className="text-red-500 ml-1">*</span>
@@ -198,6 +238,7 @@ const EditCard = () => {
                   placeholder="(555) 333-9212"
                 />
               </div>
+
               <div>
                 <label className="text-sm font-medium text-slate-600 flex items-center">
                   Email <span className="text-red-500 ml-1">*</span>
@@ -210,18 +251,44 @@ const EditCard = () => {
                   placeholder="jane@email.com"
                 />
               </div>
+
+              {/* WEBSITE */}
               <div>
                 <label className="text-sm font-medium text-slate-600">
-                  Address / Tagline
+                  Website (Optional)
                 </label>
                 <input
                   type="text"
+                  value={form.website}
+                  onChange={handleChange('website')}
+                  onBlur={handleWebsiteBlur}
+                  placeholder="nike.com"
+                  className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 ${
+                    websiteError
+                      ? 'border-rose-400 focus:ring-rose-300'
+                      : 'border-slate-200 focus:ring-sky-400 focus:border-sky-400'
+                  }`}
+                />
+                {websiteError && (
+                  <small className="text-rose-600 mt-1 block">{websiteError}</small>
+                )}
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-slate-600">
+                  Address
+                </label>
+                <textarea
+                  rows={3}
                   value={form.address}
                   onChange={handleChange('address')}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
-                  placeholder="123 Main St, Anywhere"
+                  placeholder={`Company (optional)
+Street address
+City, ST ZIP`}
+                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400 resize-none leading-relaxed"
                 />
               </div>
+
               <div>
                 <label className="text-sm font-medium text-slate-600">
                   Slogan
@@ -236,6 +303,7 @@ const EditCard = () => {
               </div>
             </div>
 
+            {/* RIGHT */}
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-slate-600">
@@ -250,7 +318,9 @@ const EditCard = () => {
                     />
                     <button
                       type="button"
-                      onClick={() => setForm((prev) => ({ ...prev, logoPreview: '' }))}
+                      onClick={() =>
+                        setForm((prev) => ({ ...prev, logoPreview: '' }))
+                      }
                       className="text-sm text-rose-600 hover:underline"
                     >
                       Remove logo
@@ -280,7 +350,9 @@ const EditCard = () => {
                       <button
                         key={option.key}
                         type="button"
-                        onClick={() => setForm((prev) => ({ ...prev, design: option.key }))}
+                        onClick={() =>
+                          setForm((prev) => ({ ...prev, design: option.key }))
+                        }
                         className={`rounded-2xl border px-2 py-3 text-center text-xs font-semibold transition ${
                           isActive
                             ? 'border-sky-500 bg-sky-50 text-sky-600'
@@ -288,7 +360,9 @@ const EditCard = () => {
                         }`}
                       >
                         <span
-                          className={`block h-16 rounded-xl mb-2 ${option.swatch || ''}`}
+                          className={`block h-16 rounded-xl mb-2 ${
+                            option.swatch || ''
+                          }`}
                         />
                         {option.label}
                       </button>
@@ -327,3 +401,4 @@ const EditCard = () => {
 };
 
 export default EditCard;
+

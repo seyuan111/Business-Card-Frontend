@@ -1,9 +1,15 @@
-// GetCards.jsx
 import React, { useEffect, useState } from 'react';
 import NavBar from '../components/NavBar';
 import BackButton from '../components/BackButton';
 import { Link, useNavigate } from 'react-router-dom';
 import { CARD_THEMES, getCardTheme } from '../utils/cardThemes';
+
+// Website normalizer (for older cards that may not have https)
+const normalizeWebsite = (value = '') => {
+  const v = String(value || '').trim();
+  if (!v) return '';
+  return /^https?:\/\//i.test(v) ? v : `https://${v}`;
+};
 
 // helper to build the print window for a saved card
 const openPrintWindowForCard = (card) => {
@@ -17,6 +23,7 @@ const openPrintWindowForCard = (card) => {
     slogan,
     logoPreview,
     design = 'classic',
+    website,
   } = card;
 
   const theme = getCardTheme(design);
@@ -57,7 +64,7 @@ const openPrintWindowForCard = (card) => {
       .info { margin-top: 6px; font-size: 11px; }
       .label { color: ${styles.subText}; margin-right: 6px; }
       .row { display:flex; align-items:center; }
-      .addr { display:flex; }
+      .addr { display:flex; white-space: pre-line; }
       @media print { .actions { display: none; } }
     </style>
   </head>
@@ -77,6 +84,11 @@ const openPrintWindowForCard = (card) => {
           <div class="title">${safe(occupation) || 'Your Title'}</div>
           <div class="info">
             <div class="row"><span class="label">Email:</span><span>${safe(email)}</span></div>
+            ${
+              website
+                ? `<div class="row"><span class="label">Website:</span><span>${safe(website)}</span></div>`
+                : ''
+            }
             <div class="row"><span class="label">Phone:</span><span>${safe(contact)}</span></div>
             ${
               address
@@ -97,6 +109,78 @@ const openPrintWindowForCard = (card) => {
     w.document.write(html);
     w.document.close();
   }
+};
+
+const formatAddress = (address = '') => {
+  const raw = String(address).trim();
+  if (!raw) return { line1: '', line2: '' };
+
+  const parts = raw
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  const isState = (s) => /^[A-Z]{2}$/i.test(s);
+  const isZip = (s) => /^\d{5}(-\d{4})?$/.test(s);
+
+  const splitStreetCity = (str) => {
+    const s = str.trim();
+    const match = s.match(
+      /(.*\b(?:ave|avenue|st|street|rd|road|blvd|boulevard|ln|lane|dr|drive|ct|court|pl|place|pkwy|parkway|way)\b)\s+(.*)/i
+    );
+    if (match) return [match[1].trim(), match[2].trim()];
+    return [s, ''];
+  };
+
+  if (parts.length >= 3) {
+    const zip = parts[parts.length - 1];
+    const state = parts[parts.length - 2];
+    const left = parts.slice(0, -2).join(', ');
+    if (isState(state) && isZip(zip)) {
+      const [line1, city] = splitStreetCity(left);
+      return {
+        line1,
+        line2: city
+          ? `${city}, ${state.toUpperCase()} ${zip}`
+          : `${state.toUpperCase()} ${zip}`,
+      };
+    }
+  }
+
+  if (parts.length >= 2) {
+    const line1 = parts[0];
+    const rest = parts.slice(1).join(', ');
+    const restTokens = rest.split(/\s+/).filter(Boolean);
+    if (restTokens.length >= 3) {
+      const zip = restTokens[restTokens.length - 1];
+      const state = restTokens[restTokens.length - 2];
+      const city = restTokens.slice(0, -2).join(' ');
+      if (isState(state) && isZip(zip)) {
+        return {
+          line1,
+          line2: `${city}, ${state.toUpperCase()} ${zip}`.trim(),
+        };
+      }
+    }
+    return { line1, line2: rest };
+  }
+
+  return { line1: raw, line2: '' };
+};
+
+const getAddressLines = (address = '') => {
+  const raw = String(address).trim();
+  if (!raw) return [];
+
+  const multi = raw
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  if (multi.length > 1) return multi.slice(0, 3);
+
+  const { line1, line2 } = formatAddress(raw);
+  return [line1, line2].filter(Boolean);
 };
 
 const GetCards = () => {
@@ -120,19 +204,14 @@ const GetCards = () => {
       (card.name && card.name.toLowerCase().includes(q)) ||
       (card.occupation && card.occupation.toLowerCase().includes(q)) ||
       (card.slogan && card.slogan.toLowerCase().includes(q)) ||
-      (card.email && card.email.toLowerCase().includes(q))
+      (card.email && card.email.toLowerCase().includes(q)) ||
+      (card.website && card.website.toLowerCase().includes(q))
     );
   });
-
-  const heartButtonBase = (theme) =>
-    theme.heart === 'text-slate-400'
-      ? 'bg-slate-100 border border-slate-200'
-      : 'bg-white/15 border border-white/30';
 
   const handleDeleteCard = (cardId) => {
     const confirmDelete = window.confirm('Delete this card?');
     if (!confirmDelete) return;
-
     try {
       setCards((prev) => {
         const updated = prev.filter((card) => card.id !== cardId);
@@ -174,7 +253,6 @@ const GetCards = () => {
           </Link>
         </div>
 
-        {/* search bar */}
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex-1">
             <input
@@ -191,44 +269,13 @@ const GetCards = () => {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-          <Link
-            to="/generate-card"
-            className="min-h-[220px] rounded-3xl border-2 border-dashed border-slate-300 bg-white px-6 py-6 flex flex-col justify-between hover:border-sky-500 hover:bg-sky-50 transition group"
-          >
-            <div>
-              <div className="w-14 h-14 rounded-2xl border border-slate-200 bg-slate-50 flex items-center justify-center text-slate-500 mb-4">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  className="w-6 h-6"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 5v11m0 0 4-4m-4 4-4-4m-3 8h14a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2h-2.5"
-                  />
-                </svg>
-              </div>
-              <p className="text-lg font-semibold text-slate-900">
-                Upload your logo
-              </p>
-              <p className="text-sm text-slate-500 mt-1">
-                Drop your file here or click to upload
-              </p>
-            </div>
-            <span className="text-sm font-semibold text-sky-600 group-hover:underline">
-              Start creating
-            </span>
-          </Link>
-
           {filteredCards.map((card) => {
             const theme = getCardTheme(card.design);
             const name = card.name || 'Full Name';
             const title = card.occupation || 'Founder & CEO';
             const email = card.email || 'john@email.com';
             const phone = card.contact || '(555) 333-9212';
+            const website = card.website || '';
             const slogan = (card.slogan || '').trim();
             const hasSlogan = Boolean(slogan);
             const hasLogo = Boolean(card.logoPreview);
@@ -250,17 +297,15 @@ const GetCards = () => {
                   >
                     <div className="flex h-full gap-3">
                       <div className="flex-1 flex flex-col">
-                        <div className="flex items-start gap-3">
-                          <div className="min-w-0">
-                            <p className="text-xl font-bold truncate">{name}</p>
-                            <p className={`text-sm truncate ${theme.sub || 'text-white/80'}`}>
-                              {title}
-                            </p>
-                          </div>
+                        <div className="min-w-0">
+                          <p className="text-xl font-bold truncate">{name}</p>
+                          <p className={`text-sm truncate ${theme.sub || 'text-white/80'}`}>
+                            {title}
+                          </p>
                         </div>
 
-                        <div className="mt-auto space-y-1.5 text-sm">
-                          <div className="flex items-center gap-2">
+                        <div className="mt-8 space-y-1 text-[12px] leading-tight flex-1 min-h-0">
+                          <div className="flex items-center gap-2 min-w-0">
                             <span className={theme.sub || 'text-white/80'}>Phone:</span>
                             <span
                               className={`truncate ${
@@ -270,7 +315,8 @@ const GetCards = () => {
                               {phone}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2">
+
+                          <div className="flex items-center gap-2 min-w-0">
                             <span className={theme.sub || 'text-white/80'}>Email:</span>
                             <span
                               className={`truncate ${
@@ -280,18 +326,48 @@ const GetCards = () => {
                               {email}
                             </span>
                           </div>
-                          {card.address && (
-                            <div className="flex items-start gap-2">
-                              <span className={theme.sub || 'text-white/80'}>Address:</span>
-                              <span
-                                className={`truncate ${
+
+                          {website.trim() && (
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className={theme.sub || 'text-white/80'}>Website:</span>
+                              <a
+                                href={normalizeWebsite(website)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className={`truncate underline ${
                                   card.design === 'minimal' ? 'text-gray-800' : 'text-white'
                                 }`}
+                                title={website}
                               >
-                                {card.address}
-                              </span>
+                                {website.replace(/^https?:\/\//i, '')}
+                              </a>
                             </div>
                           )}
+
+                          {card.address && (() => {
+                            const lines = getAddressLines(card.address);
+
+                            return (
+                              <div className="flex items-start gap-2 min-w-0">
+                                <span className={theme.sub || 'text-white/80'}>Address:</span>
+                                <span
+                                  className={`min-w-0 ${
+                                    card.design === 'minimal' ? 'text-gray-800' : 'text-white'
+                                  }`}
+                                >
+                                  {lines.map((ln, i) => (
+                                    <span
+                                      key={i}
+                                      className="block leading-snug line-clamp-1"
+                                      title={ln}
+                                    >
+                                      {ln}
+                                    </span>
+                                  ))}
+                                </span>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
 
@@ -312,7 +388,9 @@ const GetCards = () => {
                           )}
                           {hasSlogan && (
                             <p
-                              className={`text-[10px] italic truncate max-w-[96px] ${theme.sub || 'text-white/80'}`}
+                              className={`text-[10px] italic truncate max-w-[96px] ${
+                                theme.sub || 'text-white/80'
+                              }`}
                               title={slogan}
                             >
                               "{slogan}"
@@ -323,6 +401,7 @@ const GetCards = () => {
                     </div>
                   </div>
                 </div>
+
                 <div className="px-4 pb-4 flex gap-2 mt-auto">
                   <button
                     type="button"

@@ -6,6 +6,26 @@ import { isEmail } from '../utils/email';
 import BusinessCardNextGen from '../assets/BusinessCardNextGen.jpeg';
 import { CARD_THEME_OPTIONS, getCardTheme } from '../utils/cardThemes';
 
+// Website helpers
+const isWebsite = (value = '') => {
+  const v = value.trim();
+  if (!v) return true; // optional
+
+  const withProtocol = /^https?:\/\//i.test(v) ? v : `https://${v}`;
+  try {
+    const url = new URL(withProtocol);
+    return url.hostname.includes('.');
+  } catch {
+    return false;
+  }
+};
+
+const normalizeWebsite = (value = '') => {
+  const v = value.trim();
+  if (!v) return '';
+  return /^https?:\/\//i.test(v) ? v : `https://${v}`;
+};
+
 const GenerateCard = () => {
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
@@ -13,6 +33,9 @@ const GenerateCard = () => {
   const [occupation, setOccupation] = useState('');
   const [contact, setContact] = useState('');
   const [slogan, setSlogan] = useState('');
+  const [website, setWebsite] = useState('');
+  const [websiteError, setWebsiteError] = useState('');
+
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState('');
   const [design, setDesign] = useState('classic');
@@ -29,6 +52,7 @@ const GenerateCard = () => {
       occupation,
       contact,
       slogan,
+      website: normalizeWebsite(website),
       logoPreview,
       design,
       createdAt: new Date().toISOString(),
@@ -77,7 +101,21 @@ const GenerateCard = () => {
     }
   };
 
-  const canGenerate = name.trim() && email.trim() && contact.trim() && isEmail(email);
+  const handleWebsiteBlur = () => {
+    if (!isWebsite(website)) {
+      setWebsiteError('Please enter a valid website (e.g., nike.com).');
+    } else {
+      setWebsiteError('');
+      setWebsite(normalizeWebsite(website));
+    }
+  };
+
+  const canGenerate =
+    name.trim() &&
+    email.trim() &&
+    contact.trim() &&
+    isEmail(email) &&
+    isWebsite(website);
 
   const handleGenerate = () => {
     if (!canGenerate) return;
@@ -100,16 +138,18 @@ const GenerateCard = () => {
       <div className="pt-24 p-4 max-w-4xl mx-auto">
         <div className="flex items-center gap-3 mb-4">
           <BackButton />
-          <h1 className="text-2xl font-bold text-white drop-shadow">Generate Business Card</h1>
+          <h1 className="text-2xl font-bold text-white drop-shadow">
+            Generate Business Card
+          </h1>
         </div>
 
         <div className="bg-white/90 backdrop-blur-md shadow-xl rounded-lg p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* LEFT */}
             <div className="space-y-4">
               <div className="flex flex-col">
                 <label className="text-gray-400 text-sm font-medium flex items-center">
-                  Name
-                  <span className="text-red-500 ml-1">*</span>
+                  Name <span className="text-red-500 ml-1">*</span>
                 </label>
                 <input
                   type="text"
@@ -121,18 +161,29 @@ const GenerateCard = () => {
 
               <div className="flex flex-col">
                 <label className="text-gray-400 text-sm font-medium">Address</label>
-                <input
-                  type="text"
+                <textarea
+                  rows={3}
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-400 focus:outline-none"
+                  placeholder={`Company (optional)
+Street address
+City, ST ZIP`}
+                  className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-400 focus:outline-none resize-none leading-relaxed"
                 />
+                <small className="text-gray-500 mt-1">
+                  Format:
+                  <br />
+                  Burger King Company
+                  <br />
+                  12 West Ave
+                  <br />
+                  Bronx, NY 10222
+                </small>
               </div>
 
               <div className="flex flex-col">
                 <label className="text-gray-400 text-sm font-medium flex items-center">
-                  Email
-                  <span className="text-red-500 ml-1">*</span>
+                  Email <span className="text-red-500 ml-1">*</span>
                 </label>
                 <input
                   type="email"
@@ -140,6 +191,28 @@ const GenerateCard = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-400 focus:outline-none"
                 />
+              </div>
+
+              {/* WEBSITE */}
+              <div className="flex flex-col">
+                <label className="text-gray-400 text-sm font-medium">
+                  Website (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  onBlur={handleWebsiteBlur}
+                  placeholder="nike.com"
+                  className={`border rounded-lg px-4 py-2 focus:ring-2 focus:outline-none ${
+                    websiteError
+                      ? 'border-rose-400 focus:ring-rose-300'
+                      : 'border-gray-300 focus:ring-sky-400'
+                  }`}
+                />
+                {websiteError && (
+                  <small className="text-rose-600 mt-1">{websiteError}</small>
+                )}
               </div>
 
               <div className="flex flex-col">
@@ -153,11 +226,11 @@ const GenerateCard = () => {
               </div>
             </div>
 
+            {/* RIGHT */}
             <div className="space-y-4">
               <div className="flex flex-col">
                 <label className="text-gray-400 text-sm font-medium flex items-center">
-                  Contact
-                  <span className="text-red-500 ml-1">*</span>
+                  Contact <span className="text-red-500 ml-1">*</span>
                 </label>
                 <input
                   type="text"
@@ -170,7 +243,9 @@ const GenerateCard = () => {
               </div>
 
               <div className="flex flex-col">
-                <label className="text-gray-400 text-sm font-medium">Slogan (Optional)</label>
+                <label className="text-gray-400 text-sm font-medium">
+                  Slogan (Optional)
+                </label>
                 <input
                   type="text"
                   value={slogan}
@@ -181,7 +256,9 @@ const GenerateCard = () => {
               </div>
 
               <div className="flex flex-col">
-                <label className="text-gray-400 text-sm font-medium">Logo (Optional)</label>
+                <label className="text-gray-400 text-sm font-medium">
+                  Logo (Optional)
+                </label>
                 <input
                   type="file"
                   accept="image/*"
@@ -210,7 +287,9 @@ const GenerateCard = () => {
               </div>
 
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-2">Card Design</p>
+                <p className="text-sm font-medium text-gray-600 mb-2">
+                  Card Design
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {CARD_THEME_OPTIONS.map((opt) => (
                     <button
@@ -233,7 +312,9 @@ const GenerateCard = () => {
 
           {/* Live preview */}
           <div className="mt-4">
-            <p className="text-sm font-semibold text-gray-700 mb-2">Live Preview</p>
+            <p className="text-sm font-semibold text-gray-700 mb-2">
+              Live Preview
+            </p>
             <div className="border-2 border-dashed border-gray-200 rounded-xl p-4">
               <div
                 className={`mx-auto max-w-lg rounded-xl shadow-xl overflow-hidden ${theme.base}`}
@@ -266,7 +347,8 @@ const GenerateCard = () => {
                     )}
                   </div>
                 </div>
-                <div className="px-5 pb-5 text-sm">
+
+                <div className="px-5 pb-5 text-sm space-y-1.5">
                   <div className="flex items-center gap-2">
                     <span className={theme.sub || 'text-white/80'}>Email:</span>
                     <span
@@ -277,6 +359,20 @@ const GenerateCard = () => {
                       {email || 'you@example.com'}
                     </span>
                   </div>
+
+                  {website.trim() && (
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={theme.sub || 'text-white/80'}>Website:</span>
+                      <span
+                        className={`truncate ${
+                          design === 'minimal' ? 'text-gray-800' : 'text-white'
+                        }`}
+                      >
+                        {website.replace(/^https?:\/\//i, '')}
+                      </span>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-2">
                     <span className={theme.sub || 'text-white/80'}>Phone:</span>
                     <span
@@ -287,11 +383,12 @@ const GenerateCard = () => {
                       {contact || '(111) 222-5555'}
                     </span>
                   </div>
+
                   {address && (
-                    <div className="flex items-start gap-2">
+                    <div className="flex items-start gap-2 min-w-0">
                       <span className={theme.sub || 'text-white/80'}>Address:</span>
                       <span
-                        className={`truncate ${
+                        className={`whitespace-pre-line leading-tight ${
                           design === 'minimal' ? 'text-gray-800' : 'text-white'
                         }`}
                       >
@@ -307,7 +404,9 @@ const GenerateCard = () => {
           <div className="flex flex-col gap-3">
             <button
               className={`w-full py-3 text-white font-semibold rounded-lg ${
-                canGenerate ? 'bg-sky-500 hover:bg-sky-600' : 'bg-gray-400 cursor-not-allowed'
+                canGenerate
+                  ? 'bg-sky-500 hover:bg-sky-600'
+                  : 'bg-gray-400 cursor-not-allowed'
               }`}
               onClick={handleGenerate}
               disabled={!canGenerate}
@@ -328,3 +427,4 @@ const GenerateCard = () => {
 };
 
 export default GenerateCard;
+

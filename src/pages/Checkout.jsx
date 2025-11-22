@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import NavBar from '../components/NavBar';
+import { getCardTheme } from '../utils/cardThemes';
 
 const quantityPricing = {
   50: 35,
@@ -13,6 +14,96 @@ const qualityPricing = {
   standard: 0,
   premium: 15,
   luxe: 25,
+};
+
+const formatAddress = (address = '') => {
+  const raw = String(address).trim();
+  if (!raw) return { line1: '', line2: '' };
+
+  const parts = raw
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  const isState = (s) => /^[A-Z]{2}$/i.test(s);
+  const isZip = (s) => /^\d{5}(-\d{4})?$/.test(s);
+
+  // Helper: split "17 Toilet Ave Bronx" -> ["17 Toilet Ave", "Bronx"]
+  const splitStreetCity = (str) => {
+    const s = str.trim();
+
+    const suffixRegex =
+      /\b(ave|avenue|st|street|rd|road|blvd|boulevard|ln|lane|dr|drive|ct|court|pl|place|pkwy|parkway|way)\b/i;
+
+    // Find last suffix and split after it
+    const match = s.match(
+      /(.*\b(?:ave|avenue|st|street|rd|road|blvd|boulevard|ln|lane|dr|drive|ct|court|pl|place|pkwy|parkway|way)\b)\s+(.*)/i
+    );
+
+    if (match) {
+      return [match[1].trim(), match[2].trim()];
+    }
+
+    // fallback: no recognizable suffix, return whole string as line1
+    return [s, ''];
+  };
+
+  // CASE 1: "street city, ST, ZIP" (3+ comma chunks)
+  if (parts.length >= 3) {
+    const zip = parts[parts.length - 1];
+    const state = parts[parts.length - 2];
+    const left = parts.slice(0, -2).join(', ');
+
+    if (isState(state) && isZip(zip)) {
+      // left might be "17 Toilet Ave Bronx"
+      const [line1, city] = splitStreetCity(left);
+      return {
+        line1,
+        line2: city ? `${city}, ${state.toUpperCase()} ${zip}` : `${state.toUpperCase()} ${zip}`,
+      };
+    }
+  }
+
+  // CASE 2: "street, city ST ZIP"
+  if (parts.length >= 2) {
+    const line1 = parts[0];
+    const rest = parts.slice(1).join(', ');
+
+    const restTokens = rest.split(/\s+/).filter(Boolean);
+    if (restTokens.length >= 3) {
+      const zip = restTokens[restTokens.length - 1];
+      const state = restTokens[restTokens.length - 2];
+      const city = restTokens.slice(0, -2).join(' ');
+      if (isState(state) && isZip(zip)) {
+        return {
+          line1,
+          line2: `${city}, ${state.toUpperCase()} ${zip}`.trim(),
+        };
+      }
+    }
+
+    return { line1, line2: rest };
+  }
+
+  // CASE 3: no commas, keep one line
+  return { line1: raw, line2: '' };
+};
+
+const getAddressLines = (address = '') => {
+  const raw = String(address).trim();
+  if (!raw) return [];
+
+  const multi = raw
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  if (multi.length > 1) {
+    return multi.slice(0, 3);
+  }
+
+  const { line1, line2 } = formatAddress(raw);
+  return [line1, line2].filter(Boolean);
 };
 
 const Checkout = () => {
@@ -41,6 +132,17 @@ const Checkout = () => {
       console.error('Failed to load checkout card', err);
     }
   }, []);
+
+  const design = card?.design || 'classic';
+  const theme = getCardTheme(design);
+
+  const name = card?.name || 'Full Name';
+  const title = card?.occupation || 'CEO & Founder';
+  const email = card?.email || 'john@email.com';
+  const phone = card?.contact || '(415) 999-9999';
+  const slogan = (card?.slogan || '').trim();
+  const hasSlogan = Boolean(slogan);
+  const hasLogo = Boolean(card?.logoPreview);
 
   const total = useMemo(() => {
     const qtyCost = quantityPricing[quantity] ?? 55;
@@ -78,37 +180,78 @@ const Checkout = () => {
             Please review your design carefully to ensure all information is accurate.
           </p>
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div className="bg-white rounded-lg border border-slate-200 p-5">
-              <div className="flex flex-col md:flex-row gap-4 items-center">
-                <div className="flex-1 w-full">
-                  <div className="flex flex-col gap-2">
-                    <p className="text-xl font-bold text-slate-900 truncate">
-                      {card?.name || 'Full Name'}
+            <div
+              className={`relative overflow-hidden rounded-xl shadow-xl ${theme.base} px-6 py-5 h-[240px] w-full`}
+            >
+              <div className="flex h-full gap-3">
+                {/* LEFT SIDE */}
+                <div className="flex-1 flex flex-col min-w-0">
+                  <div className="min-w-0">
+                    <p className="text-xl font-bold truncate">{name}</p>
+                    <p className={`text-sm truncate ${theme.sub || 'text-white/80'}`}>
+                      {title}
                     </p>
-                    <p className="text-sm text-slate-600 truncate">
-                      {card?.occupation || 'CEO & Founder'}
-                    </p>
-                    <div className="mt-2 space-y-2 text-sm text-slate-700">
-                      <div className="flex items-center gap-2 truncate">
-                        <span className="font-semibold text-slate-800">Phone:</span>
-                        <span>{card?.contact || '(415) 999-9999'}</span>
-                      </div>
-                      <div className="flex items-center gap-2 truncate">
-                        <span className="font-semibold text-slate-800">Email:</span>
-                        <span>{card?.email || 'john@email.com'}</span>
-                      </div>
-                      <div className="flex items-center gap-2 truncate">
-                        <span className="font-semibold text-slate-800">Address:</span>
-                        <span>{card?.address || 'website.com'}</span>
-                      </div>
+                  </div>
+
+                  {/* INFO */}
+                  <div className="mt-auto space-y-1.5 text-[13px] max-h-[112px] overflow-hidden">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={theme.sub || 'text-white/80'}>Phone:</span>
+                      <span
+                        className={`truncate ${
+                          design === 'minimal' ? 'text-gray-800' : 'text-white'
+                        }`}
+                      >
+                        {phone}
+                      </span>
                     </div>
+
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={theme.sub || 'text-white/80'}>Email:</span>
+                      <span
+                        className={`truncate ${
+                          design === 'minimal' ? 'text-gray-800' : 'text-white'
+                        }`}
+                      >
+                        {email}
+                      </span>
+                    </div>
+                      {card?.address && (() => {
+                        const lines = getAddressLines(card.address);
+
+                        return (
+                          <div className="flex items-start gap-2 min-w-0">
+                            <span className={theme.sub || 'text-white/80'}>Address:</span>
+                            <span
+                              className={`min-w-0 ${
+                                design === 'minimal' ? 'text-gray-800' : 'text-white'
+                              }`}
+                            >
+                              {lines.map((ln, i) => (
+                                <span
+                                  key={i}
+                                  className="block leading-snug line-clamp-1"
+                                  title={ln}
+                                >
+                                  {ln}
+                                </span>
+                              ))}
+                            </span>
+                          </div>
+                        );
+                      })()}
                   </div>
                 </div>
 
-                {(card?.logoPreview || card?.slogan) && (
-                  <div className="flex flex-col items-center gap-2 w-48">
-                    {card?.logoPreview && (
-                      <div className="w-24 h-24 rounded-lg border border-slate-200 overflow-hidden flex items-center justify-center bg-slate-100">
+                {/* RIGHT SIDE */}
+                {(hasLogo || hasSlogan) && (
+                  <div className="flex flex-col items-center justify-center gap-2 w-24 shrink-0 text-center">
+                    {hasLogo && (
+                      <div
+                        className={`w-16 h-16 rounded-md overflow-hidden flex items-center justify-center ${
+                          theme.logoBg || ''
+                        }`}
+                      >
                         <img
                           src={card.logoPreview}
                           alt="Logo"
@@ -116,12 +259,19 @@ const Checkout = () => {
                         />
                       </div>
                     )}
-                    {card?.slogan && (
-                      <p className="text-sm text-slate-600 text-center italic truncate">
-                        "{card.slogan}"
+                    {hasSlogan && (
+                      <p
+                        className={`text-[10px] italic truncate max-w-[96px] ${
+                          theme.sub || 'text-white/80'
+                        }`}
+                        title={slogan}
+                      >
+                        "{slogan}"
                       </p>
                     )}
-                    <span className="text-xs text-slate-500">Preview</span>
+                    <span className={`text-[10px] ${theme.sub || 'text-white/70'}`}>
+                      Preview
+                    </span>
                   </div>
                 )}
               </div>
