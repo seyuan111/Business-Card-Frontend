@@ -30,7 +30,7 @@ const ShowBook = () => {
       <div className="p-4 max-w-lg mx-auto">
         <BackButton />
         <h1 className="text-2xl font-bold text-center my-4 text-gray-700">
-          Business Card Details
+          Contact Details
         </h1>
 
         {loading ? (

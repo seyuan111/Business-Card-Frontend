@@ -100,7 +100,7 @@ const CreateBooks = () => {
       <div className="p-4 max-w-lg mx-auto">
         <BackButton />
         <h1 className="text-2xl font-bold text-center my-4 text-gray-700">
-          Create Business Card
+          Create Your Contact
         </h1>
         {loading && <Spinner />}
 

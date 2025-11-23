@@ -9,6 +9,7 @@ const defaultForm = {
   name: '',
   occupation: '',
   contact: '',
+  fax: '',
   email: '',
   address: '',
   slogan: '',
@@ -37,9 +38,19 @@ const isWebsite = (value = '') => {
   const v = value.trim();
   if (!v) return true;
   const withProtocol = /^https?:\/\//i.test(v) ? v : `https://${v}`;
+
+  const hasDomainAndTld = (hostname = '') => {
+    const parts = hostname.toLowerCase().split('.').filter(Boolean);
+    // Drop leading www so we can require domain + tld after it
+    const remaining = parts[0] === 'www' && parts.length > 1 ? parts.slice(1) : parts;
+    if (remaining.length < 2) return false;
+    const tld = remaining[remaining.length - 1];
+    return /^[a-z]{2,24}$/i.test(tld);
+  };
+
   try {
     const url = new URL(withProtocol);
-    return url.hostname.includes('.');
+    return hasDomainAndTld(url.hostname);
   } catch {
     return false;
   }
@@ -71,6 +82,7 @@ const EditCard = () => {
           name: card.name || '',
           occupation: card.occupation || '',
           contact: card.contact || '',
+          fax: card.fax || '',
           email: card.email || '',
           address: card.address || '',
           slogan: card.slogan || '',
@@ -89,12 +101,21 @@ const EditCard = () => {
 
   const handleChange = (field) => (event) => {
     const value = event.target.value;
+    if (field === 'website') {
+      // Keep website validation in sync with GetCards view
+      setWebsiteError(isWebsite(value) ? '' : 'Please enter a valid website (e.g., nike.com).');
+    }
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handlePhoneChange = (event) => {
     const formatted = formatPhoneNumber(event.target.value);
     setForm((prev) => ({ ...prev, contact: formatted }));
+  };
+
+  const handleFaxChange = (event) => {
+    const formatted = formatPhoneNumber(event.target.value);
+    setForm((prev) => ({ ...prev, fax: formatted }));
   };
 
   const handleLogoChange = (event) => {
@@ -127,6 +148,11 @@ const EditCard = () => {
     isWebsite(form.website);
 
   const handleConfirmEdit = () => {
+    if (!isWebsite(form.website)) {
+      setWebsiteError('Please enter a valid website (e.g., nike.com).');
+      return;
+    }
+
     if (!canSave) {
       setError('Please fill out name, email, and phone with valid values.');
       return;
@@ -234,6 +260,19 @@ const EditCard = () => {
                   type="text"
                   value={form.contact}
                   onChange={handlePhoneChange}
+                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
+                  placeholder="(555) 333-9212"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-slate-600">
+                  Fax
+                </label>
+                <input
+                  type="text"
+                  value={form.fax}
+                  onChange={handleFaxChange}
                   className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
                   placeholder="(555) 333-9212"
                 />
@@ -401,4 +440,3 @@ City, ST ZIP`}
 };
 
 export default EditCard;
-

@@ -32,6 +32,7 @@ const GenerateCard = () => {
   const [email, setEmail] = useState('');
   const [occupation, setOccupation] = useState('');
   const [contact, setContact] = useState('');
+  const [fax, setFax] = useState('');
   const [slogan, setSlogan] = useState('');
   const [website, setWebsite] = useState('');
   const [websiteError, setWebsiteError] = useState('');
@@ -51,6 +52,7 @@ const GenerateCard = () => {
       email,
       occupation,
       contact,
+      fax,
       slogan,
       website: normalizeWebsite(website),
       logoPreview,
@@ -85,6 +87,11 @@ const GenerateCard = () => {
   const handleContactChange = (e) => {
     const formatted = formatPhoneNumber(e.target.value);
     setContact(formatted);
+  };
+
+  const handleFaxChange = (e) => {
+    const formatted = formatPhoneNumber(e.target.value);
+    setFax(formatted);
   };
 
   const handleLogoChange = (e) => {
@@ -244,6 +251,20 @@ City, ST ZIP`}
 
               <div className="flex flex-col">
                 <label className="text-gray-400 text-sm font-medium">
+                  Fax (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={fax}
+                  onChange={handleFaxChange}
+                  className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-400 focus:outline-none"
+                  placeholder="(111) 222-5555"
+                />
+                <small className="text-gray-500 mt-1">Format: (111) 222-5555</small>
+              </div>
+
+              <div className="flex flex-col">
+                <label className="text-gray-400 text-sm font-medium">
                   Slogan (Optional)
                 </label>
                 <input
@@ -384,6 +405,19 @@ City, ST ZIP`}
                     </span>
                   </div>
 
+                  {fax.trim() && (
+                    <div className="flex items-center gap-2">
+                      <span className={theme.sub || 'text-white/80'}>Fax:</span>
+                      <span
+                        className={`truncate ${
+                          design === 'minimal' ? 'text-gray-800' : 'text-white'
+                        }`}
+                      >
+                        {fax}
+                      </span>
+                    </div>
+                  )}
+
                   {address && (
                     <div className="flex items-start gap-2 min-w-0">
                       <span className={theme.sub || 'text-white/80'}>Address:</span>
@@ -427,4 +461,3 @@ City, ST ZIP`}
 };
 
 export default GenerateCard;
-

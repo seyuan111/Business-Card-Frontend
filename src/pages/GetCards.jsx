@@ -20,6 +20,7 @@ const openPrintWindowForCard = (card) => {
     email,
     occupation,
     contact,
+    fax,
     slogan,
     logoPreview,
     design = 'classic',
@@ -90,6 +91,11 @@ const openPrintWindowForCard = (card) => {
                 : ''
             }
             <div class="row"><span class="label">Phone:</span><span>${safe(contact)}</span></div>
+            ${
+              fax
+                ? `<div class="row"><span class="label">Fax:</span><span>${safe(fax)}</span></div>`
+                : ''
+            }
             ${
               address
                 ? `<div class="addr"><span class="label">Address:</span><span>${safe(address)}</span></div>`
@@ -205,7 +211,8 @@ const GetCards = () => {
       (card.occupation && card.occupation.toLowerCase().includes(q)) ||
       (card.slogan && card.slogan.toLowerCase().includes(q)) ||
       (card.email && card.email.toLowerCase().includes(q)) ||
-      (card.website && card.website.toLowerCase().includes(q))
+      (card.website && card.website.toLowerCase().includes(q)) ||
+      (card.fax && String(card.fax).toLowerCase().includes(q))
     );
   });
 
@@ -275,6 +282,7 @@ const GetCards = () => {
             const title = card.occupation || 'Founder & CEO';
             const email = card.email || 'john@email.com';
             const phone = card.contact || '(555) 333-9212';
+            const fax = card.fax || '';
             const website = card.website || '';
             const slogan = (card.slogan || '').trim();
             const hasSlogan = Boolean(slogan);
@@ -315,6 +323,19 @@ const GetCards = () => {
                               {phone}
                             </span>
                           </div>
+
+                          {fax.trim() && (
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className={theme.sub || 'text-white/80'}>Fax:</span>
+                              <span
+                                className={`truncate ${
+                                  card.design === 'minimal' ? 'text-gray-800' : 'text-white'
+                                }`}
+                              >
+                                {fax}
+                              </span>
+                            </div>
+                          )}
 
                           <div className="flex items-center gap-2 min-w-0">
                             <span className={theme.sub || 'text-white/80'}>Email:</span>

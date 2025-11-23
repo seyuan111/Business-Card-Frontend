@@ -3,6 +3,13 @@ import { Link } from 'react-router-dom';
 import NavBar from '../components/NavBar';
 import { getCardTheme } from '../utils/cardThemes';
 
+// Website normalizer to keep links clickable when protocol is missing
+const normalizeWebsite = (value = '') => {
+  const v = String(value || '').trim();
+  if (!v) return '';
+  return /^https?:\/\//i.test(v) ? v : `https://${v}`;
+};
+
 const quantityPricing = {
   50: 35,
   100: 55,
@@ -140,6 +147,10 @@ const Checkout = () => {
   const title = card?.occupation || 'CEO & Founder';
   const email = card?.email || 'john@email.com';
   const phone = card?.contact || '(415) 999-9999';
+  const fax = card?.fax || '';
+  const website = card?.website || '';
+  const websiteLink = website ? normalizeWebsite(website) : '';
+  const websiteLabel = website.replace(/^https?:\/\//i, '');
   const slogan = (card?.slogan || '').trim();
   const hasSlogan = Boolean(slogan);
   const hasLogo = Boolean(card?.logoPreview);
@@ -180,66 +191,70 @@ const Checkout = () => {
             Please review your design carefully to ensure all information is accurate.
           </p>
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div
-              className={`relative overflow-hidden rounded-xl shadow-xl ${theme.base} px-6 py-5 h-[240px] w-full`}
-            >
+            <div className={`relative overflow-hidden rounded-xl shadow-xl ${theme.base} px-6 py-5 h-[240px] w-full`}>
               <div className="flex h-full gap-3">
-                {/* LEFT SIDE */}
-                <div className="flex-1 flex flex-col min-w-0">
+                {/* LEFT SIDE - mirror GetCards layout */}
+                <div className="flex-1 flex flex-col">
                   <div className="min-w-0">
                     <p className="text-xl font-bold truncate">{name}</p>
-                    <p className={`text-sm truncate ${theme.sub || 'text-white/80'}`}>
-                      {title}
-                    </p>
+                    <p className={`text-sm truncate ${theme.sub || 'text-white/80'}`}>{title}</p>
                   </div>
 
-                  {/* INFO */}
-                  <div className="mt-auto space-y-1.5 text-[13px] max-h-[112px] overflow-hidden">
+                  <div className="mt-8 space-y-1 text-[12px] leading-tight flex-1 min-h-0">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className={theme.sub || 'text-white/80'}>Phone:</span>
-                      <span
-                        className={`truncate ${
-                          design === 'minimal' ? 'text-gray-800' : 'text-white'
-                        }`}
-                      >
+                      <span className={`truncate ${design === 'minimal' ? 'text-gray-800' : 'text-white'}`}>
                         {phone}
                       </span>
                     </div>
 
+                    {fax.trim() && (
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={theme.sub || 'text-white/80'}>Fax:</span>
+                        <span className={`truncate ${design === 'minimal' ? 'text-gray-800' : 'text-white'}`}>
+                          {fax}
+                        </span>
+                      </div>
+                    )}
+
                     <div className="flex items-center gap-2 min-w-0">
                       <span className={theme.sub || 'text-white/80'}>Email:</span>
-                      <span
-                        className={`truncate ${
-                          design === 'minimal' ? 'text-gray-800' : 'text-white'
-                        }`}
-                      >
+                      <span className={`truncate ${design === 'minimal' ? 'text-gray-800' : 'text-white'}`}>
                         {email}
                       </span>
                     </div>
-                      {card?.address && (() => {
-                        const lines = getAddressLines(card.address);
 
-                        return (
-                          <div className="flex items-start gap-2 min-w-0">
-                            <span className={theme.sub || 'text-white/80'}>Address:</span>
-                            <span
-                              className={`min-w-0 ${
-                                design === 'minimal' ? 'text-gray-800' : 'text-white'
-                              }`}
-                            >
-                              {lines.map((ln, i) => (
-                                <span
-                                  key={i}
-                                  className="block leading-snug line-clamp-1"
-                                  title={ln}
-                                >
-                                  {ln}
-                                </span>
-                              ))}
-                            </span>
-                          </div>
-                        );
-                      })()}
+                    {website.trim() && (
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={theme.sub || 'text-white/80'}>Website:</span>
+                        <a
+                          href={websiteLink}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={`truncate underline ${design === 'minimal' ? 'text-gray-800' : 'text-white'}`}
+                          title={website}
+                        >
+                          {websiteLabel}
+                        </a>
+                      </div>
+                    )}
+
+                    {card?.address && (() => {
+                      const lines = getAddressLines(card.address);
+
+                      return (
+                        <div className="flex items-start gap-2 min-w-0">
+                          <span className={theme.sub || 'text-white/80'}>Address:</span>
+                          <span className={`min-w-0 ${design === 'minimal' ? 'text-gray-800' : 'text-white'}`}>
+                            {lines.map((ln, i) => (
+                              <span key={i} className="block leading-snug" title={ln}>
+                                {ln}
+                              </span>
+                            ))}
+                          </span>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -247,31 +262,19 @@ const Checkout = () => {
                 {(hasLogo || hasSlogan) && (
                   <div className="flex flex-col items-center justify-center gap-2 w-24 shrink-0 text-center">
                     {hasLogo && (
-                      <div
-                        className={`w-16 h-16 rounded-md overflow-hidden flex items-center justify-center ${
-                          theme.logoBg || ''
-                        }`}
-                      >
-                        <img
-                          src={card.logoPreview}
-                          alt="Logo"
-                          className="w-full h-full object-cover"
-                        />
+                      <div className={`w-16 h-16 rounded-md overflow-hidden flex items-center justify-center ${theme.logoBg || ''}`}>
+                        <img src={card.logoPreview} alt="Logo" className="w-full h-full object-cover" />
                       </div>
                     )}
                     {hasSlogan && (
                       <p
-                        className={`text-[10px] italic truncate max-w-[96px] ${
-                          theme.sub || 'text-white/80'
-                        }`}
+                        className={`text-[10px] italic truncate max-w-[96px] ${theme.sub || 'text-white/80'}`}
                         title={slogan}
                       >
                         "{slogan}"
                       </p>
                     )}
-                    <span className={`text-[10px] ${theme.sub || 'text-white/70'}`}>
-                      Preview
-                    </span>
+                    <span className={`text-[10px] ${theme.sub || 'text-white/70'}`}>Preview</span>
                   </div>
                 )}
               </div>

@@ -74,11 +74,19 @@ const Hero = () => {
             variants={fadeInUp}
           >
             <Link
-              to="/cards/create"
+              to="/generate-card"
               className="relative bg-gradient-to-r from-blue-600 to-blue-800 py-3 px-8 rounded-lg text-white font-semibold shadow-lg hover:shadow-xl transition duration-300 ease-in-out transform hover:scale-105"
               aria-label="View business cards"
             >
               Generate Your Business Card
+              <span className="ml-2">→</span>
+            </Link>
+            <Link
+              to="/cards/create"
+              className="relative bg-gradient-to-r from-red-600 to-red-800 py-3 px-8 rounded-lg text-white font-semibold shadow-lg hover:shadow-xl transition duration-300 ease-in-out transform hover:scale-105"
+              aria-label="View business cards"
+            >
+              Add your contact
               <span className="ml-2">→</span>
             </Link>
             <Link
