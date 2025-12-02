@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import NavBar from '../components/NavBar';
 import BackButton from '../components/BackButton';
 import { Link, useNavigate } from 'react-router-dom';
 import { CARD_THEMES, getCardTheme } from '../utils/cardThemes';
+import { Globe, Mail, MapPin, Phone, Printer } from 'lucide-react';
 
 // Website normalizer (for older cards that may not have https)
 const normalizeWebsite = (value = '') => {
@@ -78,7 +79,7 @@ const openPrintWindowForCard = (card) => {
               ? `<img src="${logoPreview}" alt="Logo" />`
               : `<div style="font-size:10px;opacity:.7;${design==='minimal'?'color:#6b7280':''}">No Logo</div>`
           }</div>
-          ${slogan ? `<div class="slogan">“${safe(slogan)}”</div>` : ''}
+          ${slogan ? `<div class="slogan">â€œ${safe(slogan)}â€</div>` : ''}
         </div>
         <div style="flex:1; min-width:0;">
           <div class="name">${safe(name) || 'Your Name'}</div>
@@ -282,11 +283,16 @@ const GetCards = () => {
             const title = card.occupation || 'Founder & CEO';
             const email = card.email || 'john@email.com';
             const phone = card.contact || '(555) 333-9212';
-            const fax = card.fax || '';
-            const website = card.website || '';
+            const fax = (card.fax || '').toString();
+            const website = (card.website || '').toString();
             const slogan = (card.slogan || '').trim();
             const hasSlogan = Boolean(slogan);
             const hasLogo = Boolean(card.logoPreview);
+            const isMinimal = card.design === 'minimal';
+            const forceDarkText = theme.forceDarkText;
+            const useDarkText = isMinimal || forceDarkText;
+            const textColor = useDarkText ? 'text-gray-800' : 'text-white';
+            const iconColor = useDarkText ? theme.sub || 'text-gray-600' : theme.sub || 'text-white/80';
 
             return (
               <div
@@ -314,50 +320,30 @@ const GetCards = () => {
 
                         <div className="mt-8 space-y-1 text-[12px] leading-tight flex-1 min-h-0">
                           <div className="flex items-center gap-2 min-w-0">
-                            <span className={theme.sub || 'text-white/80'}>Phone:</span>
-                            <span
-                              className={`truncate ${
-                                card.design === 'minimal' ? 'text-gray-800' : 'text-white'
-                              }`}
-                            >
-                              {phone}
-                            </span>
+                            <Phone className={`h-4 w-4 shrink-0 ${iconColor}`} aria-hidden="true" />
+                            <span className={`truncate ${textColor}`}>{phone}</span>
                           </div>
 
                           {fax.trim() && (
                             <div className="flex items-center gap-2 min-w-0">
-                              <span className={theme.sub || 'text-white/80'}>Fax:</span>
-                              <span
-                                className={`truncate ${
-                                  card.design === 'minimal' ? 'text-gray-800' : 'text-white'
-                                }`}
-                              >
-                                {fax}
-                              </span>
+                              <Printer className={`h-4 w-4 shrink-0 ${iconColor}`} aria-hidden="true" />
+                              <span className={`truncate ${textColor}`}>{fax}</span>
                             </div>
                           )}
 
                           <div className="flex items-center gap-2 min-w-0">
-                            <span className={theme.sub || 'text-white/80'}>Email:</span>
-                            <span
-                              className={`truncate ${
-                                card.design === 'minimal' ? 'text-gray-800' : 'text-white'
-                              }`}
-                            >
-                              {email}
-                            </span>
+                            <Mail className={`h-4 w-4 shrink-0 ${iconColor}`} aria-hidden="true" />
+                            <span className={`truncate ${textColor}`}>{email}</span>
                           </div>
 
                           {website.trim() && (
                             <div className="flex items-center gap-2 min-w-0">
-                              <span className={theme.sub || 'text-white/80'}>Website:</span>
+                              <Globe className={`h-4 w-4 shrink-0 ${iconColor}`} aria-hidden="true" />
                               <a
                                 href={normalizeWebsite(website)}
                                 target="_blank"
                                 rel="noreferrer"
-                                className={`truncate underline ${
-                                  card.design === 'minimal' ? 'text-gray-800' : 'text-white'
-                                }`}
+                                className={`truncate underline ${textColor}`}
                                 title={website}
                               >
                                 {website.replace(/^https?:\/\//i, '')}
@@ -370,12 +356,8 @@ const GetCards = () => {
 
                             return (
                               <div className="flex items-start gap-2 min-w-0">
-                                <span className={theme.sub || 'text-white/80'}>Address:</span>
-                                <span
-                                  className={`min-w-0 ${
-                                    card.design === 'minimal' ? 'text-gray-800' : 'text-white'
-                                  }`}
-                                >
+                                <MapPin className={`h-4 w-4 shrink-0 mt-[1px] ${iconColor}`} aria-hidden="true" />
+                                <span className={`min-w-0 ${textColor}`}>
                                   {lines.map((ln, i) => (
                                     <span
                                       key={i}
@@ -457,3 +439,4 @@ const GetCards = () => {
 };
 
 export default GetCards;
+

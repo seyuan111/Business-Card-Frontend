@@ -4,7 +4,9 @@ import NavBar from '../components/NavBar';
 import BackButton from '../components/BackButton';
 import { isEmail } from '../utils/email';
 import BusinessCardNextGen from '../assets/BusinessCardNextGen.jpeg';
-import { CARD_THEME_OPTIONS, getCardTheme } from '../utils/cardThemes';
+import { CARD_THEMES, getCardTheme } from '../utils/cardThemes';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import 'swiper/css';
 
 // Website helpers
 const isWebsite = (value = '') => {
@@ -43,6 +45,9 @@ const GenerateCard = () => {
 
   const navigate = useNavigate();
   const theme = getCardTheme(design);
+  const useDarkText = design === 'minimal' || theme.forceDarkText;
+  const detailTextColor = useDarkText ? 'text-gray-800' : 'text-white';
+  const subTextColor = theme.sub || (useDarkText ? 'text-gray-600' : 'text-white/80');
 
   const saveCardToStorage = () => {
     const card = {
@@ -309,24 +314,61 @@ City, ST ZIP`}
 
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-2">
-                  Card Design
+                 Swipe To Choose Your Card Design
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {CARD_THEME_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.key}
-                      onClick={() => setDesign(opt.key)}
-                      className={`px-3 py-2 rounded-lg text-sm font-semibold border ${
-                        design === opt.key
-                          ? 'bg-sky-600 text-white border-sky-600'
-                          : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
-                      }`}
-                      type="button"
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
+                <Swiper
+                  spaceBetween={12}
+                  slidesPerView={1.1}
+                  breakpoints={{
+                    640: { slidesPerView: 2 },
+                    960: { slidesPerView: 3 },
+                  }}
+                >
+                  {Object.entries(CARD_THEMES).map(([key, item]) => {
+                    const isActive = design === key;
+                    return (
+                      <SwiperSlide key={key}>
+                        <button
+                          type="button"
+                          onClick={() => setDesign(key)}
+                          className="w-full text-left group"
+                        >
+                          <div
+                            className={`relative h-28 rounded-2xl overflow-hidden transition ring-1 ring-black/5 shadow-md ${item.base} ${
+                              isActive ? 'ring-2 ring-sky-400 scale-[1.01] shadow-lg' : ''
+                            }`}
+                          >
+                            <div className="absolute inset-0 overflow-hidden">
+                              {(item.accentElements || []).map((cls, idx) => (
+                                <span key={idx} className={`absolute ${cls}`} />
+                              ))}
+                            </div>
+                            <div className="relative h-full flex flex-col justify-between p-3">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[11px] uppercase tracking-wide font-semibold">
+                                  {item.labelText}
+                                </span>
+                              </div>
+                              <div>
+                                <p className="text-sm font-semibold">Your Name</p>
+                                <p className={`text-[11px] ${item.sub || 'text-white/80'}`}>
+                                  Role / Title
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          <span
+                            className={`mt-2 block text-center text-sm font-semibold transition ${
+                              isActive ? 'text-sky-600' : 'text-slate-600 group-hover:text-slate-800'
+                            }`}
+                          >
+                            {item.labelText}
+                          </span>
+                        </button>
+                      </SwiperSlide>
+                    );
+                  })}
+                </Swiper>
               </div>
             </div>
           </div>
@@ -362,7 +404,7 @@ City, ST ZIP`}
                       {occupation || 'Your Title'}
                     </div>
                     {slogan.trim() && (
-                      <div className={`text-xs italic ${theme.sub || 'text-white/80'}`}>
+                      <div className={`text-xs italic ${subTextColor}`}>
                         "{slogan.trim()}"
                       </div>
                     )}
@@ -371,48 +413,32 @@ City, ST ZIP`}
 
                 <div className="px-5 pb-5 text-sm space-y-1.5">
                   <div className="flex items-center gap-2">
-                    <span className={theme.sub || 'text-white/80'}>Email:</span>
-                    <span
-                      className={`truncate ${
-                        design === 'minimal' ? 'text-gray-800' : 'text-white'
-                      }`}
-                    >
+                    <span className={subTextColor}>Email:</span>
+                    <span className={`truncate ${detailTextColor}`}>
                       {email || 'you@example.com'}
                     </span>
                   </div>
 
                   {website.trim() && (
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className={theme.sub || 'text-white/80'}>Website:</span>
-                      <span
-                        className={`truncate ${
-                          design === 'minimal' ? 'text-gray-800' : 'text-white'
-                        }`}
-                      >
+                      <span className={subTextColor}>Website:</span>
+                      <span className={`truncate ${detailTextColor}`}>
                         {website.replace(/^https?:\/\//i, '')}
                       </span>
                     </div>
                   )}
 
                   <div className="flex items-center gap-2">
-                    <span className={theme.sub || 'text-white/80'}>Phone:</span>
-                    <span
-                      className={`truncate ${
-                        design === 'minimal' ? 'text-gray-800' : 'text-white'
-                      }`}
-                    >
+                    <span className={subTextColor}>Phone:</span>
+                    <span className={`truncate ${detailTextColor}`}>
                       {contact || '(111) 222-5555'}
                     </span>
                   </div>
 
                   {fax.trim() && (
                     <div className="flex items-center gap-2">
-                      <span className={theme.sub || 'text-white/80'}>Fax:</span>
-                      <span
-                        className={`truncate ${
-                          design === 'minimal' ? 'text-gray-800' : 'text-white'
-                        }`}
-                      >
+                      <span className={subTextColor}>Fax:</span>
+                      <span className={`truncate ${detailTextColor}`}>
                         {fax}
                       </span>
                     </div>
@@ -420,12 +446,8 @@ City, ST ZIP`}
 
                   {address && (
                     <div className="flex items-start gap-2 min-w-0">
-                      <span className={theme.sub || 'text-white/80'}>Address:</span>
-                      <span
-                        className={`whitespace-pre-line leading-tight ${
-                          design === 'minimal' ? 'text-gray-800' : 'text-white'
-                        }`}
-                      >
+                      <span className={subTextColor}>Address:</span>
+                      <span className={`whitespace-pre-line leading-tight ${detailTextColor}`}>
                         {address}
                       </span>
                     </div>

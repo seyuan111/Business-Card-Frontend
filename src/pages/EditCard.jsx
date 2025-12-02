@@ -3,7 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import NavBar from '../components/NavBar';
 import BackButton from '../components/BackButton';
 import { isEmail } from '../utils/email';
-import { CARD_THEME_OPTIONS } from '../utils/cardThemes';
+import { CARD_THEMES } from '../utils/cardThemes';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import 'swiper/css';
 
 const defaultForm = {
   name: '',
@@ -382,32 +384,59 @@ City, ST ZIP`}
                 <p className="text-sm font-medium text-slate-600 mb-2">
                   Card design
                 </p>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {CARD_THEME_OPTIONS.map((option) => {
-                    const isActive = form.design === option.key;
+                <Swiper
+                  spaceBetween={12}
+                  slidesPerView={1.1}
+                  breakpoints={{
+                    640: { slidesPerView: 2 },
+                    960: { slidesPerView: 3 },
+                  }}
+                >
+                  {Object.entries(CARD_THEMES).map(([key, item]) => {
+                    const isActive = form.design === key;
                     return (
-                      <button
-                        key={option.key}
-                        type="button"
-                        onClick={() =>
-                          setForm((prev) => ({ ...prev, design: option.key }))
-                        }
-                        className={`rounded-2xl border px-2 py-3 text-center text-xs font-semibold transition ${
-                          isActive
-                            ? 'border-sky-500 bg-sky-50 text-sky-600'
-                            : 'border-slate-200 text-slate-500 hover:border-slate-300'
-                        }`}
-                      >
-                        <span
-                          className={`block h-16 rounded-xl mb-2 ${
-                            option.swatch || ''
-                          }`}
-                        />
-                        {option.label}
-                      </button>
+                      <SwiperSlide key={key}>
+                        <button
+                          type="button"
+                          onClick={() => setForm((prev) => ({ ...prev, design: key }))}
+                          className="w-full text-left group"
+                        >
+                          <div
+                            className={`relative h-28 rounded-2xl overflow-hidden transition ring-1 ring-black/5 shadow-md ${item.base} ${
+                              isActive ? 'ring-2 ring-sky-400 scale-[1.01] shadow-lg' : ''
+                            }`}
+                          >
+                            <div className="absolute inset-0 overflow-hidden">
+                              {(item.accentElements || []).map((cls, idx) => (
+                                <span key={idx} className={`absolute ${cls}`} />
+                              ))}
+                            </div>
+                            <div className="relative h-full flex flex-col justify-between p-3">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[11px] uppercase tracking-wide font-semibold">
+                                  {item.labelText}
+                                </span>
+                              </div>
+                              <div>
+                                <p className="text-sm font-semibold">Your Name</p>
+                                <p className={`text-[11px] ${item.sub || 'text-white/80'}`}>
+                                  Role / Title
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          <span
+                            className={`mt-2 block text-center text-sm font-semibold transition ${
+                              isActive ? 'text-sky-600' : 'text-slate-600 group-hover:text-slate-800'
+                            }`}
+                          >
+                            {item.labelText}
+                          </span>
+                        </button>
+                      </SwiperSlide>
                     );
                   })}
-                </div>
+                </Swiper>
               </div>
             </div>
           </div>

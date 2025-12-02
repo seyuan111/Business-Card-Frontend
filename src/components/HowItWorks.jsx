@@ -33,8 +33,8 @@ const HowItWorks = () => {
               for your business. You can also enter keywords to help Find a business 
               card you really love.
             </p>
-            <Link to='/cards/create' className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-lg transition-colors">
-              Find your Business Card
+            <Link to='/generate-card' className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-lg transition-colors">
+              Create Your Business Card
             </Link>
           </div>
 
