@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { BiArrowBack } from "react-icons/bi";
 import axios from "axios";
 import NavBar from "../components/NavBar";
@@ -21,9 +20,8 @@ const Signup = () => {
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   const [verificationError, setVerificationError] = useState("");
-  const valid = isEmail(formData.email);
 
-  // Optionally, show an error if the email is invalid
+  const valid = isEmail(formData.email);
   const emailError = formData.email && !valid ? "Please enter a valid email address." : "";
 
   const handleChange = (e) => {
@@ -35,7 +33,6 @@ const Signup = () => {
     setError("");
     setLoading(true);
 
-    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
       setLoading(false);
@@ -55,10 +52,7 @@ const Signup = () => {
         password: formData.password,
       });
 
-      // Store user data in localStorage
       localStorage.setItem("user", JSON.stringify(response.data.user));
-
-      // Show verification modal instead of redirecting
       setShowVerificationModal(true);
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");
@@ -78,9 +72,8 @@ const Signup = () => {
       });
 
       if (response.data.success) {
-        // On successful verification, user is already logged in via JWT from signup
         setShowVerificationModal(false);
-        navigate("/"); // Redirect to a protected route (adjust as needed)
+        navigate("/");
       }
     } catch (err) {
       setVerificationError(err.response?.data?.message || "Verification failed");
@@ -90,150 +83,189 @@ const Signup = () => {
   };
 
   return (
-    <div className="w-full min-h-screen flex flex-col bg-gradient-to-br from-[#e6f0fa] via-[#f9e6f0] to-[#e6f0fa] text-gray-700">
+    <div className="relative min-h-screen bg-gradient-to-br from-[#0f172a] via-[#0b223f] to-[#0f172a] text-slate-50">
+      <div className="pointer-events-none absolute inset-0 opacity-50">
+        <div className="absolute -left-12 top-12 h-64 w-64 rounded-full bg-emerald-400/25 blur-3xl" />
+        <div className="absolute right-0 top-24 h-72 w-72 rounded-full bg-cyan-400/25 blur-3xl" />
+        <div className="absolute bottom-10 right-24 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl" />
+      </div>
       <NavBar />
-      <div className="flex flex-col justify-center items-center min-h-screen p-6">
-        <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-lg border border-gray-200 relative">
-          <button
-            onClick={() => navigate(-1)}
-            className="absolute top-4 left-4 text-gray-600 hover:text-gray-800 transition"
-          >
-            <BiArrowBack size={24} />
-          </button>
-          <div className="flex justify-center mb-6">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-600 mt-2">Sign Up to Card-Ology</h2>
+      <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+        <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-8">
+          <div className="rounded-2xl border border-white/10 bg-white/10 p-8 shadow-2xl backdrop-blur">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-emerald-100">Sign up</p>
+                <h2 className="text-2xl font-bold text-white">Create your account</h2>
+              </div>
+              <button
+                onClick={() => navigate(-1)}
+                className="flex items-center gap-2 text-sm font-semibold text-emerald-100 hover:text-emerald-50"
+              >
+                <BiArrowBack /> Back
+              </button>
             </div>
-          </div>
-          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-600">Name</label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Enter your name"
-                className="border border-gray-300 bg-white p-3 w-full rounded-lg focus:ring-2 focus:ring-[#e63946] text-black"
-                required
-              />
-            </div>
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-600">Email Address</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="Enter your email"
-                className="border border-gray-300 bg-white p-3 w-full rounded-lg focus:ring-2 focus:ring-[#e63946] text-black"
-                required
-              />
-              {emailError && (
-                <span className="text-red-500 text-xs mt-1">{emailError}</span>
-              )}
-            </div>
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-600">Password</label>
-              <div className="relative">
+
+            {error && <p className="mb-4 rounded-lg bg-rose-500/10 px-3 py-2 text-sm text-rose-100 border border-rose-300/30">{error}</p>}
+
+            <form className="space-y-4" onSubmit={handleSubmit}>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-200">Name</label>
                 <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  value={formData.password}
+                  type="text"
+                  name="name"
+                  value={formData.name}
                   onChange={handleChange}
-                  placeholder="Enter your password"
-                  className="border border-gray-300 bg-white p-3 w-full rounded-lg focus:ring-2 focus:ring-[#e63946] text-black"
+                  placeholder="Your name"
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-white/10 px-3 py-3 text-sm text-white placeholder:text-slate-300/60 shadow-inner shadow-black/10 outline-none transition focus:border-emerald-300/60 focus:ring-2 focus:ring-emerald-300/40"
                   required
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? "👁️" : "👁️‍🗨️"}
-                </button>
               </div>
-            </div>
-            <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-600">Confirm Password</label>
-              <div className="relative">
+
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-200">Email</label>
                 <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
+                  type="email"
+                  name="email"
+                  value={formData.email}
                   onChange={handleChange}
-                  placeholder="Confirm your password"
-                  className="border border-gray-300 bg-white p-3 w-full rounded-lg focus:ring-2 focus:ring-[#e63946] text-black"
+                  placeholder="you@example.com"
+                  className={`mt-2 w-full rounded-xl border px-3 py-3 text-sm text-white placeholder:text-slate-300/60 shadow-inner shadow-black/10 outline-none transition focus:ring-2 focus:ring-emerald-300/40 ${
+                    emailError ? "border-rose-300/60" : "border-white/10 bg-white/10 focus:border-emerald-300/60"
+                  }`}
                   required
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showConfirmPassword ? "👁️" : "👁️‍🗨️"}
-                </button>
+                {emailError && <p className="mt-1 text-xs text-rose-200">{emailError}</p>}
               </div>
-            </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className={`w-full py-3 bg-[#e63946] hover:bg-[#d62828] text-white rounded-lg text-lg font-semibold transition shadow-md ${loading ? "opacity-50 cursor-not-allowed" : ""
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-200">Password</label>
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((s) => !s)}
+                      className="text-xs font-semibold text-emerald-100 hover:text-emerald-50"
+                    >
+                      {showPassword ? "Hide" : "Show"}
+                    </button>
+                  </div>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="Create a password"
+                    className="mt-2 w-full rounded-xl border border-white/10 bg-white/10 px-3 py-3 text-sm text-white placeholder:text-slate-300/60 shadow-inner shadow-black/10 outline-none transition focus:border-emerald-300/60 focus:ring-2 focus:ring-emerald-300/40"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-200">Confirm</label>
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword((s) => !s)}
+                      className="text-xs font-semibold text-emerald-100 hover:text-emerald-50"
+                    >
+                      {showConfirmPassword ? "Hide" : "Show"}
+                    </button>
+                  </div>
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    placeholder="Confirm password"
+                    className="mt-2 w-full rounded-xl border border-white/10 bg-white/10 px-3 py-3 text-sm text-white placeholder:text-slate-300/60 shadow-inner shadow-black/10 outline-none transition focus:border-emerald-300/60 focus:ring-2 focus:ring-emerald-300/40"
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className={`w-full rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-500 px-5 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-emerald-500/30 transition hover:-translate-y-0.5 hover:shadow-emerald-500/50 ${
+                  loading ? "opacity-70 cursor-not-allowed" : ""
                 }`}
-            >
-              {loading ? "Signing Up..." : "Sign Up"}
-            </button>
-            <div className="text-center mt-4">
-              <p className="text-sm text-gray-600">
+              >
+                {loading ? "Signing up..." : "Create account"}
+              </button>
+
+              <div className="text-center text-sm text-slate-200/80">
                 Already have an account?{" "}
-                <Link to="/login" className="text-[#e63946] font-medium hover:underline">
+                <Link to="/login" className="font-semibold text-emerald-100 hover:text-emerald-50">
                   Log in
                 </Link>
+              </div>
+            </form>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-lg backdrop-blur hidden lg:flex flex-col justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-emerald-200">Why join</p>
+              <h3 className="mt-3 text-3xl font-bold text-white">Design, save, share.</h3>
+              <p className="mt-3 text-slate-200/80">
+                Keep your business cards in sync, export in seconds, and control who sees your latest details.
               </p>
             </div>
-          </form>
+            <div className="mt-6 grid grid-cols-2 gap-4 text-sm text-slate-200/80">
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-[0.15em] text-emerald-100">Templates</p>
+                <p className="mt-1 font-semibold text-white">Fresh drops weekly</p>
+              </div>
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                <p className="text-xs uppercase tracking-[0.15em] text-emerald-100">Sync</p>
+                <p className="mt-1 font-semibold text-white">Multi-device ready</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Verification Modal */}
       {showVerificationModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm">
-            <h2 className="text-xl font-bold text-gray-600 mb-4">Verify Your Email</h2>
-            <p className="text-sm text-gray-600 mb-4">
-              Please enter the verification code sent to your email.
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/10 p-6 shadow-2xl backdrop-blur">
+            <h2 className="text-xl font-bold text-white">Verify your email</h2>
+            <p className="mt-2 text-sm text-slate-200/80">
+              Enter the verification code we sent to your inbox to finish signing up.
             </p>
             {verificationError && (
-              <p className="text-red-500 text-sm text-center mb-4">{verificationError}</p>
+              <p className="mt-3 rounded-lg border border-rose-300/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-100">
+                {verificationError}
+              </p>
             )}
-            <form onSubmit={handleVerificationSubmit} className="space-y-4">
-              <div className="flex flex-col">
-                <label className="text-sm font-medium text-gray-600">Verification Code</label>
+            <form onSubmit={handleVerificationSubmit} className="mt-4 space-y-4">
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-200">Verification code</label>
                 <input
                   type="text"
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value)}
-                  placeholder="Enter verification code"
-                  className="border border-gray-300 bg-white p-3 w-full rounded-lg focus:ring-2 focus:ring-[#e63946] text-black"
+                  placeholder="6-digit code"
+                  className="mt-2 w-full rounded-xl border border-white/10 bg-white/10 px-3 py-3 text-sm text-white placeholder:text-slate-300/60 shadow-inner shadow-black/10 outline-none transition focus:border-emerald-300/60 focus:ring-2 focus:ring-emerald-300/40"
                   required
                 />
               </div>
               <button
                 type="submit"
                 disabled={loading}
-                className={`w-full py-3 bg-[#e63946] hover:bg-[#d62828] text-white rounded-lg text-lg font-semibold transition shadow-md ${loading ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
+                className={`w-full rounded-xl bg-gradient-to-r from-emerald-400 to-cyan-500 px-5 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-emerald-500/30 transition hover:-translate-y-0.5 hover:shadow-emerald-500/50 ${
+                  loading ? "opacity-70 cursor-not-allowed" : ""
+                }`}
               >
                 {loading ? "Verifying..." : "Verify"}
               </button>
+              <button
+                type="button"
+                onClick={() => setShowVerificationModal(false)}
+                className="w-full rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/10"
+              >
+                Cancel
+              </button>
             </form>
-            <button
-              onClick={() => setShowVerificationModal(false)}
-              className="w-full mt-4 text-sm text-gray-600 hover:underline"
-            >
-              Cancel
-            </button>
           </div>
         </div>
       )}

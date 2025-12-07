@@ -4,6 +4,9 @@ import NavBar from '../components/NavBar';
 import BackButton from '../components/BackButton';
 import { isEmail } from '../utils/email';
 import BusinessCardNextGen from '../assets/BusinessCardNextGen.jpeg';
+
+const cardBackground =
+  'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=2000&q=80';
 import { CARD_THEMES, getCardTheme } from '../utils/cardThemes';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
@@ -139,7 +142,11 @@ const GenerateCard = () => {
     <div className="relative min-h-screen">
       <div className="absolute inset-0 -z-10">
         <img
-          src={BusinessCardNextGen}
+          src={cardBackground}
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = BusinessCardNextGen;
+          }}
           alt="Business Card Background"
           className="w-full h-full object-cover"
         />

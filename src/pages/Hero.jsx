@@ -9,6 +9,9 @@ import Reviews from '../components/Reviews';
 import Footer from '../components/Footer';
 import BusinessCardNextGen from '../assets/BusinessCardNextGen.jpeg'
 
+const heroImage =
+  'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=2000&q=80';
+
 const Hero = () => {
   // Animation variants for framer-motion
   const fadeInUp = {
@@ -33,7 +36,15 @@ const Hero = () => {
       <div className="relative flex min-h-[calc(100vh-80px)] flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 z-0">
-              <img src={BusinessCardNextGen} alt="Business Card Background" className="w-full h-full object-cover" />
+              <img
+                src={heroImage}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = BusinessCardNextGen;
+                }}
+                alt="Business Card Background"
+                className="w-full h-full object-cover"
+              />
               <div className="absolute inset-0 bg-black/40"></div>
         </div>
 
