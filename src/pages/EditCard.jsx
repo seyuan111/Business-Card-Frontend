@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import NavBar from '../components/NavBar';
 import BackButton from '../components/BackButton';
@@ -6,6 +6,8 @@ import { isEmail } from '../utils/email';
 import { CARD_THEMES } from '../utils/cardThemes';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
+import { getUserScopedKey, hasToken } from '../utils/auth';
+import { useSnackbar } from 'notistack';
 
 const defaultForm = {
   name: '',
@@ -72,10 +74,18 @@ const EditCard = () => {
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
   const [websiteError, setWebsiteError] = useState('');
+  const { enqueueSnackbar } = useSnackbar();
+  const storageKey = useMemo(() => getUserScopedKey('generatedCards'), []);
 
   useEffect(() => {
+    if (!hasToken()) {
+      setError('Please log in to edit a card.');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const stored = JSON.parse(localStorage.getItem('generatedCards') || '[]');
+      const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
       const card = stored.find((item) => String(item.id) === String(id));
       if (!card) {
         setError('We could not find that card. Head back and create one first.');
@@ -99,7 +109,7 @@ const EditCard = () => {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, storageKey]);
 
   const handleChange = (field) => (event) => {
     const value = event.target.value;
@@ -150,6 +160,12 @@ const EditCard = () => {
     isWebsite(form.website);
 
   const handleConfirmEdit = () => {
+    if (!hasToken()) {
+      enqueueSnackbar('Please log in to save changes.', { variant: 'warning' });
+      navigate('/Login');
+      return;
+    }
+
     if (!isWebsite(form.website)) {
       setWebsiteError('Please enter a valid website (e.g., nike.com).');
       return;
@@ -162,7 +178,7 @@ const EditCard = () => {
 
     setError('');
     try {
-      const stored = JSON.parse(localStorage.getItem('generatedCards') || '[]');
+      const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
       const index = stored.findIndex((item) => String(item.id) === String(id));
       if (index === -1) {
         setError('Unable to update because this card no longer exists.');
@@ -177,7 +193,7 @@ const EditCard = () => {
       };
 
       stored[index] = updatedCard;
-      localStorage.setItem('generatedCards', JSON.stringify(stored));
+      localStorage.setItem(storageKey, JSON.stringify(stored));
       setStatus('Changes saved!');
       setTimeout(() => navigate('/get-cards'), 900);
     } catch (err) {
