@@ -326,11 +326,13 @@ const GetCards = () => {
                 const title = card.occupation || 'Founder & CEO';
                 const email = card.email || 'john@email.com';
                 const phone = card.contact || '(555) 333-9212';
-                const fax = (card.fax || '').toString();
-                const website = (card.website || '').toString();
+                const fax = (card.fax ?? '').toString().trim();
+                const website = (card.website ?? '').toString().trim();
                 const slogan = (card.slogan || '').trim();
                 const hasSlogan = Boolean(slogan);
                 const hasLogo = Boolean(card.logoPreview);
+                const hasFax = fax && fax.replace(/[\s()-]/g, '').length > 0;
+                const hasWebsite = website.length > 0;
                 const isMinimal = card.design === 'minimal';
                 const forceDarkText = theme.forceDarkText;
                 const useDarkText = isMinimal || forceDarkText;
@@ -367,7 +369,7 @@ const GetCards = () => {
                                 <span className={`truncate ${textColor}`}>{phone}</span>
                               </div>
 
-                              {fax.trim() && (
+                              {hasFax && (
                                 <div className="flex items-center gap-2 min-w-0">
                                   <Printer className={`h-4 w-4 shrink-0 ${iconColor}`} aria-hidden="true" />
                                   <span className={`truncate ${textColor}`}>{fax}</span>
@@ -379,7 +381,7 @@ const GetCards = () => {
                                 <span className={`truncate ${textColor}`}>{email}</span>
                               </div>
 
-                              {website.trim() && (
+                              {hasWebsite && (
                                 <div className="flex items-center gap-2 min-w-0">
                                   <Globe className={`h-4 w-4 shrink-0 ${iconColor}`} aria-hidden="true" />
                                   <a
