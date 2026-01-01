@@ -4,6 +4,7 @@ import Spinner from '../components/Spinner';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
+import { getAuthConfig, hasToken } from '../utils/auth';
 
 const DeleteBook = () => {
   const [loading, setLoading] = useState(false);
@@ -12,9 +13,15 @@ const DeleteBook = () => {
   const { enqueueSnackbar } = useSnackbar();
 
   const handleDeleteCard = () => {
+    if (!hasToken()) {
+      enqueueSnackbar('Please log in to delete a contact.', { variant: 'warning' });
+      navigate('/Login');
+      return;
+    }
+
     setLoading(true);
     axios
-      .delete(`${import.meta.env.VITE_BACKEND_URL}/cards/${id}`)
+      .delete(`${import.meta.env.VITE_BACKEND_URL}/cards/${id}`, getAuthConfig())
       .then(() => {
         setLoading(false);
         enqueueSnackbar('Card Deleted successfully', { variant: 'success' });

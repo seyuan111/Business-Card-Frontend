@@ -5,6 +5,7 @@ import { FaRegAddressCard } from "react-icons/fa";
 import { motion, AnimatePresence } from 'framer-motion';
 import 'tailwindcss/tailwind.css';
 import axios from 'axios';
+import { getAuthConfig } from '../utils/auth';
 
 const NavBar = () => {
   const [nav, setNav] = useState(false);
@@ -84,9 +85,10 @@ const NavBar = () => {
         await axios.post(
           `${import.meta.env.VITE_BACKEND_URL}/users/logout`,
           {},
-          { withCredentials: true }
+          getAuthConfig()
         );
         localStorage.removeItem('user');
+        localStorage.removeItem('token');
         setUser(null);
         setNav(false);
         setDropdownOpen(false);
@@ -95,6 +97,7 @@ const NavBar = () => {
         console.error('Logout error:', err);
         // Fallback: still clear local state
         localStorage.removeItem('user');
+        localStorage.removeItem('token');
         setUser(null);
         setNav(false);
         setDropdownOpen(false);

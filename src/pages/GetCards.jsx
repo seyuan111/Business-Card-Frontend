@@ -4,6 +4,9 @@ import BackButton from '../components/BackButton';
 import { Link, useNavigate } from 'react-router-dom';
 import { CARD_THEMES, getCardTheme } from '../utils/cardThemes';
 import { Globe, Mail, MapPin, Phone, Printer } from 'lucide-react';
+import { useMemo } from 'react';
+import { getUserScopedKey, hasToken } from '../utils/auth';
+import { useSnackbar } from 'notistack';
 
 // Website normalizer (for older cards that may not have https)
 const normalizeWebsite = (value = '') => {
@@ -194,15 +197,25 @@ const GetCards = () => {
   const [cards, setCards] = useState([]);
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
+  const storageKey = useMemo(() => getUserScopedKey('generatedCards'), []);
+  const [authRequired, setAuthRequired] = useState(false);
 
   useEffect(() => {
+    if (!hasToken()) {
+      setAuthRequired(true);
+      setCards([]);
+      return;
+    }
+
     try {
-      const stored = JSON.parse(localStorage.getItem('generatedCards') || '[]');
+      const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
       setCards(stored);
+      setAuthRequired(false);
     } catch (err) {
       console.error('Failed to load cards', err);
     }
-  }, []);
+  }, [storageKey]);
 
   const filteredCards = cards.filter((card) => {
     if (!query.trim()) return true;
@@ -218,12 +231,18 @@ const GetCards = () => {
   });
 
   const handleDeleteCard = (cardId) => {
+    if (!hasToken()) {
+      enqueueSnackbar('Please log in to delete a card.', { variant: 'warning' });
+      navigate('/Login');
+      return;
+    }
+
     const confirmDelete = window.confirm('Delete this card?');
     if (!confirmDelete) return;
     try {
       setCards((prev) => {
         const updated = prev.filter((card) => card.id !== cardId);
-        localStorage.setItem('generatedCards', JSON.stringify(updated));
+        localStorage.setItem(storageKey, JSON.stringify(updated));
         return updated;
       });
     } catch (err) {
@@ -232,11 +251,23 @@ const GetCards = () => {
   };
 
   const handleCardClick = (cardId) => {
+    if (!hasToken()) {
+      enqueueSnackbar('Please log in to edit a card.', { variant: 'warning' });
+      navigate('/Login');
+      return;
+    }
+
     if (!cardId) return;
     navigate(`/edit-card/${cardId}`);
   };
 
   const handleCheckout = (card) => {
+    if (!hasToken()) {
+      enqueueSnackbar('Please log in to print or download a card.', { variant: 'warning' });
+      navigate('/Login');
+      return;
+    }
+
     try {
       localStorage.setItem('checkoutCard', JSON.stringify(card));
     } catch (err) {
@@ -261,177 +292,191 @@ const GetCards = () => {
           </Link>
         </div>
 
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex-1">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by name, email, slogan..."
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400 focus:outline-none bg-white"
-            />
+        {authRequired ? (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 text-center text-slate-700">
+            <p className="text-lg font-semibold">Please log in to view your cards.</p>
+            <button
+              onClick={() => navigate('/Login')}
+              className="mt-4 px-4 py-2 rounded-lg bg-sky-600 text-white text-sm font-semibold hover:bg-sky-700"
+            >
+              Go to Login
+            </button>
           </div>
-          <div className="text-sm text-gray-500">
-            {cards.length} saved card{cards.length === 1 ? '' : 's'}
-          </div>
-        </div>
+        ) : (
+          <>
+            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search by name, email, slogan..."
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400 focus:outline-none bg-white"
+                />
+              </div>
+              <div className="text-sm text-gray-500">
+                {cards.length} saved card{cards.length === 1 ? '' : 's'}
+              </div>
+            </div>
 
-        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-          {filteredCards.map((card) => {
-            const theme = getCardTheme(card.design);
-            const name = card.name || 'Full Name';
-            const title = card.occupation || 'Founder & CEO';
-            const email = card.email || 'john@email.com';
-            const phone = card.contact || '(555) 333-9212';
-            const fax = (card.fax || '').toString();
-            const website = (card.website || '').toString();
-            const slogan = (card.slogan || '').trim();
-            const hasSlogan = Boolean(slogan);
-            const hasLogo = Boolean(card.logoPreview);
-            const isMinimal = card.design === 'minimal';
-            const forceDarkText = theme.forceDarkText;
-            const useDarkText = isMinimal || forceDarkText;
-            const textColor = useDarkText ? 'text-gray-800' : 'text-white';
-            const iconColor = useDarkText ? theme.sub || 'text-gray-600' : theme.sub || 'text-white/80';
+            <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+              {filteredCards.map((card) => {
+                const theme = getCardTheme(card.design);
+                const name = card.name || 'Full Name';
+                const title = card.occupation || 'Founder & CEO';
+                const email = card.email || 'john@email.com';
+                const phone = card.contact || '(555) 333-9212';
+                const fax = (card.fax || '').toString();
+                const website = (card.website || '').toString();
+                const slogan = (card.slogan || '').trim();
+                const hasSlogan = Boolean(slogan);
+                const hasLogo = Boolean(card.logoPreview);
+                const isMinimal = card.design === 'minimal';
+                const forceDarkText = theme.forceDarkText;
+                const useDarkText = isMinimal || forceDarkText;
+                const textColor = useDarkText ? 'text-gray-800' : 'text-white';
+                const iconColor = useDarkText ? theme.sub || 'text-gray-600' : theme.sub || 'text-white/80';
 
-            return (
-              <div
-                key={card.id}
-                className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col"
-              >
-                <div className="p-4">
+                return (
                   <div
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => handleCardClick(card.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') handleCardClick(card.id);
-                    }}
-                    className={`relative overflow-hidden rounded-xl shadow-xl ${theme.base} px-5 py-4 h-[240px] cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500`}
+                    key={card.id}
+                    className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col"
                   >
-                    <div className="flex h-full gap-3">
-                      <div className="flex-1 flex flex-col">
-                        <div className="min-w-0">
-                          <p className="text-xl font-bold truncate">{name}</p>
-                          <p className={`text-sm truncate ${theme.sub || 'text-white/80'}`}>
-                            {title}
-                          </p>
-                        </div>
-
-                        <div className="mt-8 space-y-1 text-[12px] leading-tight flex-1 min-h-0">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <Phone className={`h-4 w-4 shrink-0 ${iconColor}`} aria-hidden="true" />
-                            <span className={`truncate ${textColor}`}>{phone}</span>
-                          </div>
-
-                          {fax.trim() && (
-                            <div className="flex items-center gap-2 min-w-0">
-                              <Printer className={`h-4 w-4 shrink-0 ${iconColor}`} aria-hidden="true" />
-                              <span className={`truncate ${textColor}`}>{fax}</span>
+                    <div className="p-4">
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => handleCardClick(card.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') handleCardClick(card.id);
+                        }}
+                        className={`relative overflow-hidden rounded-xl shadow-xl ${theme.base} px-5 py-4 h-[240px] cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500`}
+                      >
+                        <div className="flex h-full gap-3">
+                          <div className="flex-1 flex flex-col">
+                            <div className="min-w-0">
+                              <p className="text-xl font-bold truncate">{name}</p>
+                              <p className={`text-sm truncate ${theme.sub || 'text-white/80'}`}>
+                                {title}
+                              </p>
                             </div>
-                          )}
 
-                          <div className="flex items-center gap-2 min-w-0">
-                            <Mail className={`h-4 w-4 shrink-0 ${iconColor}`} aria-hidden="true" />
-                            <span className={`truncate ${textColor}`}>{email}</span>
-                          </div>
-
-                          {website.trim() && (
-                            <div className="flex items-center gap-2 min-w-0">
-                              <Globe className={`h-4 w-4 shrink-0 ${iconColor}`} aria-hidden="true" />
-                              <a
-                                href={normalizeWebsite(website)}
-                                target="_blank"
-                                rel="noreferrer"
-                                className={`truncate underline ${textColor}`}
-                                title={website}
-                              >
-                                {website.replace(/^https?:\/\//i, '')}
-                              </a>
-                            </div>
-                          )}
-
-                          {card.address && (() => {
-                            const lines = getAddressLines(card.address);
-
-                            return (
-                              <div className="flex items-start gap-2 min-w-0">
-                                <MapPin className={`h-4 w-4 shrink-0 mt-[1px] ${iconColor}`} aria-hidden="true" />
-                                <span className={`min-w-0 ${textColor}`}>
-                                  {lines.map((ln, i) => (
-                                    <span
-                                      key={i}
-                                      className="block leading-snug line-clamp-1"
-                                      title={ln}
-                                    >
-                                      {ln}
-                                    </span>
-                                  ))}
-                                </span>
+                            <div className="mt-8 space-y-1 text-[12px] leading-tight flex-1 min-h-0">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Phone className={`h-4 w-4 shrink-0 ${iconColor}`} aria-hidden="true" />
+                                <span className={`truncate ${textColor}`}>{phone}</span>
                               </div>
-                            );
-                          })()}
+
+                              {fax.trim() && (
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <Printer className={`h-4 w-4 shrink-0 ${iconColor}`} aria-hidden="true" />
+                                  <span className={`truncate ${textColor}`}>{fax}</span>
+                                </div>
+                              )}
+
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Mail className={`h-4 w-4 shrink-0 ${iconColor}`} aria-hidden="true" />
+                                <span className={`truncate ${textColor}`}>{email}</span>
+                              </div>
+
+                              {website.trim() && (
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <Globe className={`h-4 w-4 shrink-0 ${iconColor}`} aria-hidden="true" />
+                                  <a
+                                    href={normalizeWebsite(website)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className={`truncate underline ${textColor}`}
+                                    title={website}
+                                  >
+                                    {website.replace(/^https?:\/\//i, '')}
+                                  </a>
+                                </div>
+                              )}
+
+                              {card.address && (() => {
+                                const lines = getAddressLines(card.address);
+
+                                return (
+                                  <div className="flex items-start gap-2 min-w-0">
+                                    <MapPin className={`h-4 w-4 shrink-0 mt-[1px] ${iconColor}`} aria-hidden="true" />
+                                    <span className={`min-w-0 ${textColor}`}>
+                                      {lines.map((ln, i) => (
+                                        <span
+                                          key={i}
+                                          className="block leading-snug line-clamp-1"
+                                          title={ln}
+                                        >
+                                          {ln}
+                                        </span>
+                                      ))}
+                                    </span>
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          </div>
+
+                          {(hasLogo || hasSlogan) && (
+                            <div className="flex flex-col items-center justify-center gap-2 w-24 shrink-0 text-center">
+                              {hasLogo && (
+                                <div
+                                  className={`w-16 h-16 rounded-md overflow-hidden flex items-center justify-center ${
+                                    theme.logoBg || ''
+                                  }`}
+                                >
+                                  <img
+                                    src={card.logoPreview}
+                                    alt="Logo"
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              )}
+                              {hasSlogan && (
+                                <p
+                                  className={`text-[10px] italic truncate max-w-[96px] ${
+                                    theme.sub || 'text-white/80'
+                                  }`}
+                                  title={slogan}
+                                >
+                                  "{slogan}"
+                                </p>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
+                    </div>
 
-                      {(hasLogo || hasSlogan) && (
-                        <div className="flex flex-col items-center justify-center gap-2 w-24 shrink-0 text-center">
-                          {hasLogo && (
-                            <div
-                              className={`w-16 h-16 rounded-md overflow-hidden flex items-center justify-center ${
-                                theme.logoBg || ''
-                              }`}
-                            >
-                              <img
-                                src={card.logoPreview}
-                                alt="Logo"
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          )}
-                          {hasSlogan && (
-                            <p
-                              className={`text-[10px] italic truncate max-w-[96px] ${
-                                theme.sub || 'text-white/80'
-                              }`}
-                              title={slogan}
-                            >
-                              "{slogan}"
-                            </p>
-                          )}
-                        </div>
-                      )}
+                    <div className="px-4 pb-4 flex gap-2 mt-auto">
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteCard(card.id)}
+                        className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100"
+                      >
+                        Delete
+                      </button>
+                      <button
+                        onClick={() => handleCheckout(card)}
+                        className="flex-1 py-2 text-xs font-semibold rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition"
+                      >
+                        Print / Download
+                      </button>
                     </div>
                   </div>
-                </div>
+                );
+              })}
+            </div>
 
-                <div className="px-4 pb-4 flex gap-2 mt-auto">
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteCard(card.id)}
-                    className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100"
-                  >
-                    Delete
-                  </button>
-                  <button
-                    onClick={() => handleCheckout(card)}
-                    className="flex-1 py-2 text-xs font-semibold rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition"
-                  >
-                    Print / Download
-                  </button>
-                </div>
+            {filteredCards.length === 0 && (
+              <div className="text-center text-gray-500 mt-8">
+                <p>No cards yet.</p>
+                <p className="text-sm mt-1">
+                  Generate a card first, then it will appear alongside the templates above.
+                </p>
               </div>
-            );
-          })}
-        </div>
-
-        {filteredCards.length === 0 && (
-          <div className="text-center text-gray-500 mt-8">
-            <p>No cards yet.</p>
-            <p className="text-sm mt-1">
-              Generate a card first, then it will appear alongside the templates above.
-            </p>
-          </div>
+            )}
+          </>
         )}
       </div>
     </div>

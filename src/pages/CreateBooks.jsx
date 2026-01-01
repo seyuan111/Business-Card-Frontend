@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
 import NavBar from '../components/NavBar';
 import { isEmail } from '../utils/email'; // Add this import
+import { getAuthConfig, hasToken } from '../utils/auth';
 
 const CreateBooks = () => {
   const [name, setName] = useState('');
@@ -13,6 +14,8 @@ const CreateBooks = () => {
   const [email, setEmail] = useState('');
   const [occupation, setOccupation] = useState('');
   const [contact, setContact] = useState('');
+  const [fax, setFax] = useState('');
+  const [website, setWebsite] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
@@ -42,7 +45,18 @@ const CreateBooks = () => {
     setContact(formattedPhone);
   };
 
+  const handleFaxChange = (e) => {
+    const formattedPhone = formatPhoneNumber(e.target.value);
+    setFax(formattedPhone);
+  };
+
   const handleSaveBook = () => {
+    if (!hasToken()) {
+      enqueueSnackbar('Please log in to add a contact.', { variant: 'warning' });
+      navigate('/Login');
+      return;
+    }
+
     if (!name || !email || !contact) {
       enqueueSnackbar('Please fill out all required fields', { variant: 'error' });
       return;
@@ -54,12 +68,13 @@ const CreateBooks = () => {
       return;
     }
 
-    const data = { name, address, email, occupation, contact };
+    const data = { name, address, email, occupation, contact, fax, website };
+    const authConfig = getAuthConfig();
     setLoading(true);
 
     // Check if the email or contact already exists
     axios
-      .get(`${import.meta.env.VITE_BACKEND_URL}/cards`)
+      .get(`${import.meta.env.VITE_BACKEND_URL}/cards`, authConfig)
       .then((response) => {
         const existingCard = response.data.data.find(
           (card) => card.email === email || card.contact === contact
@@ -74,7 +89,7 @@ const CreateBooks = () => {
           }
         } else {
           axios
-            .post(`${import.meta.env.VITE_BACKEND_URL}/cards`, data)
+            .post(`${import.meta.env.VITE_BACKEND_URL}/cards`, data, authConfig)
             .then(() => {
               setLoading(false);
               enqueueSnackbar('Card Created successfully', { variant: 'success' });
@@ -176,6 +191,35 @@ const CreateBooks = () => {
                 className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-400 focus:outline-none"
               />
               <small className="text-gray-500 mt-1">Format: (111) 222-5555</small>
+            </div>
+
+            {/* Fax field */}
+            <div className="flex flex-col">
+              <label className="text-gray-400 text-sm font-medium flex items-center">
+                Fax
+              </label>
+              <input
+                type="text"
+                value={fax}
+                onChange={handleFaxChange}
+                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-400 focus:outline-none"
+              />
+              <small className="text-gray-500 mt-1">Format: (111) 222-5555</small>
+            </div>
+
+            {/* Website field */}
+            <div className="flex flex-col">
+              <label className="text-gray-400 text-sm font-medium flex items-center">
+                Website
+              </label>
+              <input
+                type="url"
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+                placeholder="https://example.com"
+                className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-400 focus:outline-none"
+              />
+              <small className="text-gray-500 mt-1">Optional. nike.com or https://nike.com</small>
             </div>
           </div>
 

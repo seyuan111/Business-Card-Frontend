@@ -6,16 +6,24 @@ import { MdOutlineAddBox } from 'react-icons/md';
 import BooksTable from '../components/home/BooksTable';
 import BooksCard from '../components/home/BooksCard';
 import NavBar from '../components/NavBar';
+import { getAuthConfig, hasToken } from '../utils/auth';
 
 const Home = () => {
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showType, setShowType] = useState('table');
+  const [authRequired, setAuthRequired] = useState(false);
 
   useEffect(() => {
+    if (!hasToken()) {
+      setAuthRequired(true);
+      setCards([]);
+      return;
+    }
+
     setLoading(true);
     axios
-      .get(`${import.meta.env.VITE_BACKEND_URL}/cards`)
+      .get(`${import.meta.env.VITE_BACKEND_URL}/cards`, getAuthConfig())
       .then((response) => {
         setCards(response.data.data);
         setLoading(false);
@@ -61,7 +69,11 @@ const Home = () => {
 
         {/* Content Section */}
         <div className="mt-8">
-          {loading ? (
+          {authRequired ? (
+            <div className="text-center bg-white rounded-lg shadow p-6 text-gray-700">
+              Please log in to view your contacts.
+            </div>
+          ) : loading ? (
             <div className="flex justify-center items-center">
               <Spinner />
             </div>

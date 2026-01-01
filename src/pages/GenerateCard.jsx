@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import NavBar from '../components/NavBar';
 import BackButton from '../components/BackButton';
 import { isEmail } from '../utils/email';
 import BusinessCardNextGen from '../assets/BusinessCardNextGen.jpeg';
+import { useSnackbar } from 'notistack';
+import { getUserScopedKey, hasToken } from '../utils/auth';
 
 const cardBackground =
   'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=2000&q=80';
@@ -47,10 +49,19 @@ const GenerateCard = () => {
   const [design, setDesign] = useState('classic');
 
   const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
+  const storageKey = useMemo(() => getUserScopedKey('generatedCards'), []);
   const theme = getCardTheme(design);
   const useDarkText = design === 'minimal' || theme.forceDarkText;
   const detailTextColor = useDarkText ? 'text-gray-800' : 'text-white';
   const subTextColor = theme.sub || (useDarkText ? 'text-gray-600' : 'text-white/80');
+
+  useEffect(() => {
+    if (!hasToken()) {
+      enqueueSnackbar('Please log in to generate a card.', { variant: 'warning' });
+      navigate('/Login');
+    }
+  }, [enqueueSnackbar, navigate]);
 
   const saveCardToStorage = () => {
     const card = {
@@ -69,9 +80,9 @@ const GenerateCard = () => {
     };
 
     try {
-      const existing = JSON.parse(localStorage.getItem('generatedCards') || '[]');
+      const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
       existing.unshift(card);
-      localStorage.setItem('generatedCards', JSON.stringify(existing));
+      localStorage.setItem(storageKey, JSON.stringify(existing));
     } catch (err) {
       console.error('Failed to save card', err);
     }
@@ -133,6 +144,12 @@ const GenerateCard = () => {
     isWebsite(website);
 
   const handleGenerate = () => {
+    if (!hasToken()) {
+      enqueueSnackbar('Please log in to generate a card.', { variant: 'warning' });
+      navigate('/Login');
+      return;
+    }
+
     if (!canGenerate) return;
     saveCardToStorage();
     navigate('/get-cards');

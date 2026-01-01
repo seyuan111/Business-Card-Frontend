@@ -130,7 +130,7 @@ const Signup = () => {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="you@example.com"
-                  className={`mt-2 w-full rounded-xl border px-3 py-3 text-sm text-white placeholder:text-slate-300/60 shadow-inner shadow-black/10 outline-none transition focus:ring-2 focus:ring-emerald-300/40 ${
+                  className={`mt-2 w-full rounded-xl border border-white/10 bg-white/10 px-3 py-3 text-sm text-white autofill:bg-white/10 autofill:text-white autofill:border-white/10 autofill:shadow-[0_0_0_1000px_rgba(255,255,255,0.04)_inset] placeholder:text-slate-300/60 shadow-inner shadow-black/10 outline-none transition focus:border-emerald-300/60 focus:ring-2 focus:ring-emerald-300/40 ${
                     emailError ? "border-rose-300/60" : "border-white/10 bg-white/10 focus:border-emerald-300/60"
                   }`}
                   required

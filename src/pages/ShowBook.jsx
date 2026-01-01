@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import BackButton from '../components/BackButton';
 import Spinner from '../components/Spinner';
 import NavBar from '../components/NavBar';
+import { getAuthConfig, hasToken } from '../utils/auth';
 
 const ShowBook = () => {
   const [card, setCard] = useState({});
@@ -11,9 +12,14 @@ const ShowBook = () => {
   const { id } = useParams();
 
   useEffect(() => {
+    if (!hasToken()) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     axios
-      .get(`${import.meta.env.VITE_BACKEND_URL}/cards/${id}`)
+      .get(`${import.meta.env.VITE_BACKEND_URL}/cards/${id}`, getAuthConfig())
       .then((response) => {
         setCard(response.data);
         setLoading(false);
@@ -45,6 +51,8 @@ const ShowBook = () => {
                 { label: 'Email', value: card.email },
                 { label: 'Occupation', value: card.occupation },
                 { label: 'Contact', value: card.contact },
+                { label: 'Fax', value: card.fax },
+                { label: 'Website', value: card.website },
                 { 
                   label: 'Created At', 
                   value: card.createdAt ? new Date(card.createdAt).toLocaleString() : 'N/A' 

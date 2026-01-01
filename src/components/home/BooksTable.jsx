@@ -6,6 +6,7 @@ import { MdOutlineDelete } from 'react-icons/md';
 import axios from 'axios';
 import { useSnackbar } from 'notistack';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getAuthConfig } from '../../utils/auth';
 
 const BooksTable = ({ cards }) => {
   const [selectedCard, setSelectedCard] = useState(null);
@@ -18,7 +19,10 @@ const BooksTable = ({ cards }) => {
 
     setLoading(true);
     try {
-      await axios.delete(`${import.meta.env.VITE_BACKEND_URL}/cards/${selectedCard._id}`);
+      await axios.delete(
+        `${import.meta.env.VITE_BACKEND_URL}/cards/${selectedCard._id}`,
+        getAuthConfig()
+      );
       enqueueSnackbar('Card deleted successfully', { variant: 'success' });
       setSelectedCard(null);
     } catch (error) {
