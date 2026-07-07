@@ -2,9 +2,11 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import NavBar from "../components/NavBar";
+import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -35,25 +37,27 @@ const Login = () => {
       );
 
       if (response.data.success) {
-        if (response.data.token) {
-          localStorage.setItem("token", response.data.token);
-        }
+        const token = response.data.token;
+        const user = response.data.user;
 
-        if (response.data.user) {
-          localStorage.setItem("user", JSON.stringify(response.data.user));
+        if (token && user) {
+          login(user, token);
           navigate("/");
         } else {
-          const token = response.data.token || localStorage.getItem("token");
+          const fallbackToken = token || localStorage.getItem("token");
+          if (!fallbackToken) {
+            throw new Error("Missing auth token after login");
+          }
           const userResponse = await axios.get(
             `${import.meta.env.VITE_BACKEND_URL}/users/check-auth`,
             {
-              headers: token ? { Authorization: `Bearer ${token}` } : {},
+              headers: fallbackToken ? { Authorization: `Bearer ${fallbackToken}` } : {},
               withCredentials: true,
             }
           );
 
           if (userResponse.data.success) {
-            localStorage.setItem("user", JSON.stringify(userResponse.data.user));
+            login(userResponse.data.user, fallbackToken);
             navigate("/");
           } else {
             throw new Error("Failed to fetch user data");
@@ -178,6 +182,14 @@ const Login = () => {
                   Create an account
                 </Link>
               </div>
+
+              <button
+                type="button"
+                onClick={() => navigate("/signup")}
+                className="w-full rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:bg-white/15 hover:text-emerald-50"
+              >
+                Sign up using Google account
+              </button>
             </form>
           </div>
         </div>

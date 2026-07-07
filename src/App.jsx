@@ -16,6 +16,7 @@ import GenerateCard from './pages/GenerateCard'
 import GetCards from './pages/GetCards'
 import EditCard from './pages/EditCard'
 import Checkout from './pages/Checkout'
+import LogosList from './pages/LogosList'
 
 const App = () => {
   return (
@@ -36,6 +37,7 @@ const App = () => {
       <Route path="/get-cards" element={<GetCards />}></Route>
       <Route path="/edit-card/:id" element={<EditCard />}></Route>
       <Route path="/checkout" element={<Checkout />}></Route>
+      <Route path="/logos-list" element={<LogosList />} />
     </Routes>
   );
 };

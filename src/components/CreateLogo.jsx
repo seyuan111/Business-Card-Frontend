@@ -1,14 +1,39 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Sparkles, Zap, Palette, Download } from 'lucide-react'
 
+const STORAGE_KEY = 'createdLogos'
+
 const CreateLogo = () => {
+  const navigate = useNavigate()
   const [companyName, setCompanyName] = useState('')
   const [industry, setIndustry] = useState('')
+  const [customIndustry, setCustomIndustry] = useState('')
+
+  const handleIndustryChange = (e) => {
+    const selectedIndustry = e.target.value
+    setIndustry(selectedIndustry)
+
+    if (selectedIndustry !== 'other') {
+      setCustomIndustry('')
+    }
+  }
 
   const handleCreateLogo = () => {
     if (companyName.trim()) {
-      alert(`Creating logo for ${companyName}...`)
-      // Here you would integrate with your logo creation logic
+      const selectedIndustry = industry === 'other' ? customIndustry.trim() : industry
+      const logoEntry = {
+        id: Date.now(),
+        companyName: companyName.trim(),
+        industry: selectedIndustry || 'General',
+        createdAt: new Date().toISOString(),
+      }
+
+      const existingLogos = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
+      const updatedLogos = [logoEntry, ...existingLogos]
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedLogos))
+
+      navigate('/logos-list')
     } else {
       alert('Please enter your company name')
     }
@@ -57,7 +82,7 @@ const CreateLogo = () => {
                 <select
                   id="industry"
                   value={industry}
-                  onChange={(e) => setIndustry(e.target.value)}
+                  onChange={handleIndustryChange}
                   className="w-full px-6 py-4 border-2 border-gray-200 rounded-xl text-lg focus:border-blue-500 focus:outline-none transition-colors bg-white"
                 >
                   <option value="">Select your industry</option>
@@ -72,17 +97,43 @@ const CreateLogo = () => {
                   <option value="creative">Creative & Design</option>
                   <option value="other">Other</option>
                 </select>
+
+                {industry === 'other' && (
+                  <div className="mt-3">
+                    <label htmlFor="customIndustry" className="block text-sm font-semibold text-gray-700 mb-2">
+                      Specify your industry
+                    </label>
+                    <input
+                      type="text"
+                      id="customIndustry"
+                      value={customIndustry}
+                      onChange={(e) => setCustomIndustry(e.target.value)}
+                      placeholder="Type your industry"
+                      className="w-full px-6 py-4 border-2 border-gray-200 rounded-xl text-lg focus:border-blue-500 focus:outline-none transition-colors"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* CTA Button */}
-            <button
-              onClick={handleCreateLogo}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold text-lg px-8 py-5 rounded-xl transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-3"
-            >
-              <Zap className="w-6 h-6" />
-              Create My Logo Now
-            </button>
+            {/* CTA Buttons */}
+            <div className="space-y-3">
+              <button
+                onClick={handleCreateLogo}
+                className="w-full rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-blue-500/20 transition-all duration-200 hover:-translate-y-0.5 hover:from-blue-700 hover:to-purple-700 hover:shadow-xl flex items-center justify-center gap-3"
+              >
+                <Zap className="h-5 w-5" />
+                Create My Logo Now
+              </button>
+
+              <button
+                onClick={() => navigate('/logos-list')}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-8 py-4 text-lg font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:bg-slate-50 flex items-center justify-center gap-3"
+              >
+                <Sparkles className="h-5 w-5 text-blue-600" />
+                My Logos List
+              </button>
+            </div>
 
             <p className="text-center text-sm text-gray-500 mt-4">
               Free to start • No credit card required • Instant results
