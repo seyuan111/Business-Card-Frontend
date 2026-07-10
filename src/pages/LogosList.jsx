@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Sparkles, Plus } from 'lucide-react'
+import { Sparkles, Plus, Download } from 'lucide-react'
 import NavBar from '../components/NavBar';
 
 const STORAGE_KEY = 'createdLogos'
@@ -12,6 +12,30 @@ const LogosList = () => {
     const storedLogos = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
     setLogos(storedLogos)
   }, [])
+
+  const handleDeleteLogo = (id) => {
+    const confirmed = window.confirm('Delete this logo permanently?')
+    if (!confirmed) return
+
+    const nextLogos = logos.filter((logo) => logo.id !== id)
+    setLogos(nextLogos)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextLogos))
+  }
+
+  const handleDownloadLogo = (logo) => {
+    const fileName = `${logo.companyName.trim().replace(/[^a-zA-Z0-9_-]/g, '_') || 'logo'}_${logo.id}`
+    const svgContent = `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800">\n  <rect width="800" height="800" fill="#0f172a" />\n  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#38bdf8" font-family="Inter, sans-serif" font-size="96">${logo.companyName}</text>\n</svg>`
+
+    const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `${fileName}.svg`
+    document.body.appendChild(anchor)
+    anchor.click()
+    document.body.removeChild(anchor)
+    URL.revokeObjectURL(url)
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
@@ -64,6 +88,23 @@ const LogosList = () => {
                 <p className="mt-4 text-xs uppercase tracking-[0.2em] text-slate-400">
                   Created {new Date(logo.createdAt).toLocaleDateString()}
                 </p>
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadLogo(logo)}
+                    className="inline-flex items-center justify-center rounded-full border border-cyan-400/30 bg-cyan-500/10 px-4 py-2 text-sm font-semibold text-cyan-200 transition hover:bg-cyan-500/20"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Download logo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteLogo(logo.id)}
+                    className="inline-flex items-center justify-center rounded-full border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-200 transition hover:bg-red-500/20"
+                  >
+                    Delete logo
+                  </button>
+                </div>
               </div>
             ))}
           </div>
