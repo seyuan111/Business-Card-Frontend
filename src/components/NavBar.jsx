@@ -177,8 +177,8 @@ const NavBar = () => {
 
   const navItems = [
     { path: '/', label: 'Home' },
-    { path: '/Home', label: 'View Cards' },
-    { path: '/cards/create', label: 'Add Card' },
+    { path: '/Home', label: 'View Contacts' },
+    { path: '/cards/create', label: 'Add Contact' },
     { path: '/generate-card', label: 'Make Card' },
     { path: '/get-cards', label: "My Cards"}
   ];

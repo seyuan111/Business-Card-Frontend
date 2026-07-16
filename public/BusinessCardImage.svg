@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Business card icon">
+  <rect width="256" height="256" rx="56" fill="#000000"/>
+  <rect x="56" y="72" width="144" height="112" rx="20" fill="#ffffff"/>
+  <rect x="76" y="92" width="104" height="16" rx="8" fill="#111827"/>
+  <rect x="76" y="118" width="72" height="12" rx="6" fill="#4b5563"/>
+  <rect x="76" y="138" width="88" height="12" rx="6" fill="#4b5563"/>
+  <rect x="76" y="158" width="60" height="12" rx="6" fill="#4b5563"/>
+  <circle cx="182" cy="144" r="18" fill="#2563eb"/>
+  <path d="M176 144h12M182 138v12" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
+</svg>

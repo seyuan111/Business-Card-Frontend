@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#0f172a" />
+  <rect x="80" y="80" width="1040" height="470" rx="32" fill="#111827" stroke="#38bdf8" stroke-width="6" />
+  <circle cx="340" cy="315" r="120" fill="#38bdf8" opacity="0.9" />
+  <path d="M280 240h120v30H310v60h90v30H310v60H280z" fill="#ffffff" />
+  <text x="500" y="290" fill="#ffffff" font-family="Arial, sans-serif" font-size="54" font-weight="700">Card-Iology</text>
+  <text x="500" y="350" fill="#cbd5e1" font-family="Arial, sans-serif" font-size="32">Create beautiful digital business cards</text>
+</svg>
