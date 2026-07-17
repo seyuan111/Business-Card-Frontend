@@ -4,9 +4,11 @@ import { BiArrowBack } from "react-icons/bi";
 import axios from "axios";
 import NavBar from "../components/NavBar";
 import { isEmail } from "../utils/email";
+import { useAuth } from "../context/AuthContext";
 
 const Signup = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -72,8 +74,21 @@ const Signup = () => {
       });
 
       if (response.data.success) {
+        const token = response.data.token;
+        const user = response.data.user || JSON.parse(localStorage.getItem("user") || "null");
+
+        if (token && user) {
+          localStorage.setItem("token", token);
+          localStorage.setItem("user", JSON.stringify(user));
+          login(user, token);
+        } else if (user) {
+          localStorage.setItem("user", JSON.stringify(user));
+          localStorage.setItem("token", token || localStorage.getItem("token") || "");
+          window.dispatchEvent(new Event("auth-state-changed"));
+        }
+
         setShowVerificationModal(false);
-        navigate("/");
+        navigate("/", { replace: true });
       }
     } catch (err) {
       setVerificationError(err.response?.data?.message || "Verification failed");

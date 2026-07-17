@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import 'tailwindcss/tailwind.css';
 import axios from 'axios';
 import { getAuthConfig } from '../utils/auth';
+import { useAuth } from '../context/AuthContext';
 
 const NavBar = () => {
   const [nav, setNav] = useState(false);
@@ -14,17 +15,7 @@ const NavBar = () => {
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
-  
-  // Use React state instead of localStorage for demo purposes
-  const [user, setUser] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('user')) || null;
-    } catch {
-      return null;
-    }
-  });
-  
-  const isAuthenticated = !!user;
+  const { user, isAuthenticated, logout } = useAuth();
 
   // Handle scroll effect for navbar
   useEffect(() => {
@@ -87,18 +78,10 @@ const NavBar = () => {
           {},
           getAuthConfig()
         );
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-        setUser(null);
-        setNav(false);
-        setDropdownOpen(false);
-        navigate('/');
       } catch (err) {
         console.error('Logout error:', err);
-        // Fallback: still clear local state
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-        setUser(null);
+      } finally {
+        await logout();
         setNav(false);
         setDropdownOpen(false);
         navigate('/');

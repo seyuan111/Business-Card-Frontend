@@ -42,27 +42,31 @@ const Login = () => {
 
         if (token && user) {
           login(user, token);
-          navigate("/");
-        } else {
-          const fallbackToken = token || localStorage.getItem("token");
-          if (!fallbackToken) {
-            throw new Error("Missing auth token after login");
-          }
-          const userResponse = await axios.get(
-            `${import.meta.env.VITE_BACKEND_URL}/users/check-auth`,
-            {
-              headers: fallbackToken ? { Authorization: `Bearer ${fallbackToken}` } : {},
-              withCredentials: true,
-            }
-          );
-
-          if (userResponse.data.success) {
-            login(userResponse.data.user, fallbackToken);
-            navigate("/");
-          } else {
-            throw new Error("Failed to fetch user data");
-          }
+          window.dispatchEvent(new Event('auth:changed'));
+          navigate("/", { replace: true });
+          return;
         }
+
+        const fallbackToken = token || localStorage.getItem("token");
+        if (!fallbackToken) {
+          throw new Error("Missing auth token after login");
+        }
+        const userResponse = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/users/check-auth`,
+          {
+            headers: fallbackToken ? { Authorization: `Bearer ${fallbackToken}` } : {},
+            withCredentials: true,
+          }
+        );
+
+        if (userResponse.data.success) {
+          login(userResponse.data.user, fallbackToken);
+          window.dispatchEvent(new Event('auth:changed'));
+          navigate("/", { replace: true });
+          return;
+        }
+
+        throw new Error("Failed to fetch user data");
       }
     } catch (err) {
       const errorMessage = err.response?.data?.message || "Login failed. Please try again.";
