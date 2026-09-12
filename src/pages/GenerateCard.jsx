@@ -6,6 +6,7 @@ import { isEmail } from '../utils/email';
 import BusinessCardNextGen from '../assets/BusinessCardNextGen.jpeg';
 import { useSnackbar } from 'notistack';
 import { getUserScopedKey, hasToken } from '../utils/auth';
+import { readCreatedLogos } from '../utils/logos';
 
 const cardBackground =
   'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=2000&q=80';
@@ -46,6 +47,7 @@ const GenerateCard = () => {
 
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState('');
+  const [savedLogos, setSavedLogos] = useState([]);
   const [design, setDesign] = useState('classic');
 
   const navigate = useNavigate();
@@ -62,6 +64,19 @@ const GenerateCard = () => {
       navigate('/Login');
     }
   }, [enqueueSnackbar, navigate]);
+
+  useEffect(() => {
+    setSavedLogos(readCreatedLogos());
+    try {
+      const selectedLogo = JSON.parse(localStorage.getItem('selectedLogoForCard') || 'null');
+      if (selectedLogo?.logoPreview) {
+        setLogoPreview(selectedLogo.logoPreview);
+        localStorage.removeItem('selectedLogoForCard');
+      }
+    } catch {
+      localStorage.removeItem('selectedLogoForCard');
+    }
+  }, []);
 
   const saveCardToStorage = () => {
     const card = {
@@ -125,6 +140,12 @@ const GenerateCard = () => {
     } else {
       setLogoPreview('');
     }
+  };
+
+  const handleSavedLogoChange = (e) => {
+    const selectedLogo = savedLogos.find((logo) => String(logo.id) === e.target.value);
+    setLogoFile(null);
+    setLogoPreview(selectedLogo?.logoPreview || '');
   };
 
   const handleWebsiteBlur = () => {
@@ -315,6 +336,18 @@ City, ST ZIP`}
                   onChange={handleLogoChange}
                   className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-400 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100"
                 />
+                {savedLogos.length > 0 && (
+                  <select
+                    defaultValue=""
+                    onChange={handleSavedLogoChange}
+                    className="mt-2 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-sky-400 focus:outline-none"
+                  >
+                    <option value="">Or choose a saved logo</option>
+                    {savedLogos.map((logo) => (
+                      <option key={logo.id} value={logo.id}>{logo.companyName}</option>
+                    ))}
+                  </select>
+                )}
                 {logoPreview && (
                   <div className="mt-2 flex items-center gap-3">
                     <img

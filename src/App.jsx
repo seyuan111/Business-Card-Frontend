@@ -1,4 +1,3 @@
-import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import CreateBook from './pages/CreateBooks';
@@ -17,6 +16,7 @@ import GetCards from './pages/GetCards'
 import EditCard from './pages/EditCard'
 import Checkout from './pages/Checkout'
 import LogosList from './pages/LogosList'
+import ChooseLogoIcon from './pages/ChooseLogoIcon'
 
 const App = () => {
   return (
@@ -38,6 +38,7 @@ const App = () => {
       <Route path="/edit-card/:id" element={<EditCard />}></Route>
       <Route path="/checkout" element={<Checkout />}></Route>
       <Route path="/logos-list" element={<LogosList />} />
+      <Route path="/choose-logo-icon" element={<ChooseLogoIcon />} />
     </Routes>
   );
 };

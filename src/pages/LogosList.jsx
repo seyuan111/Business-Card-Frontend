@@ -2,15 +2,13 @@ import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Sparkles, Plus, Download } from 'lucide-react'
 import NavBar from '../components/NavBar';
-
-const STORAGE_KEY = 'createdLogos'
+import { LOGO_STORAGE_KEY, createLogoSvg, readCreatedLogos, svgToDataUrl } from '../utils/logos'
 
 const LogosList = () => {
   const [logos, setLogos] = useState([])
 
   useEffect(() => {
-    const storedLogos = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
-    setLogos(storedLogos)
+    setLogos(readCreatedLogos())
   }, [])
 
   const handleDeleteLogo = (id) => {
@@ -19,12 +17,12 @@ const LogosList = () => {
 
     const nextLogos = logos.filter((logo) => logo.id !== id)
     setLogos(nextLogos)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(nextLogos))
+    localStorage.setItem(LOGO_STORAGE_KEY, JSON.stringify(nextLogos))
   }
 
   const handleDownloadLogo = (logo) => {
     const fileName = `${logo.companyName.trim().replace(/[^a-zA-Z0-9_-]/g, '_') || 'logo'}_${logo.id}`
-    const svgContent = `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800">\n  <rect width="800" height="800" fill="#0f172a" />\n  <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#38bdf8" font-family="Inter, sans-serif" font-size="96">${logo.companyName}</text>\n</svg>`
+    const svgContent = logo.svg || createLogoSvg(logo.companyName, logo.industry, logo.icon)
 
     const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' })
     const url = URL.createObjectURL(blob)
@@ -35,6 +33,14 @@ const LogosList = () => {
     anchor.click()
     document.body.removeChild(anchor)
     URL.revokeObjectURL(url)
+  }
+
+  const handleUseOnCard = (logo) => {
+    localStorage.setItem('selectedLogoForCard', JSON.stringify({
+      ...logo,
+      svg: logo.svg || createLogoSvg(logo.companyName, logo.industry, logo.icon),
+    }))
+    window.location.href = '/generate-card'
   }
 
   return (
@@ -73,15 +79,21 @@ const LogosList = () => {
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {logos.map((logo) => (
+            {logos.map((logo) => {
+              const logoPreview = logo.logoPreview || svgToDataUrl(createLogoSvg(logo.companyName, logo.industry, logo.icon))
+              return (
               <div
                 key={logo.id}
                 className="rounded-3xl border border-white/10 bg-white/10 p-6 shadow-xl backdrop-blur"
               >
-                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 text-xl font-bold text-white">
-                  {logo.companyName.charAt(0).toUpperCase()}
+                <div className="mb-4 overflow-hidden rounded-2xl bg-white">
+                  <img
+                    src={logoPreview}
+                    alt={`${logo.companyName} logo`}
+                    className="aspect-[10/7] w-full object-cover"
+                  />
                 </div>
-                <h3 className="text-xl font-semibold text-white">{logo.companyName}</h3>
+                <h3 className="text-xl font-semibold text-white">{logo.companyName || 'Untitled logo'}</h3>
                 <p className="mt-2 text-sm text-slate-300">
                   Industry: <span className="font-medium text-cyan-200">{logo.industry}</span>
                 </p>
@@ -99,6 +111,13 @@ const LogosList = () => {
                   </button>
                   <button
                     type="button"
+                    onClick={() => handleUseOnCard(logo)}
+                    className="inline-flex items-center justify-center rounded-full border border-emerald-400/30 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-500/20"
+                  >
+                    Use on card
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => handleDeleteLogo(logo.id)}
                     className="inline-flex items-center justify-center rounded-full border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-200 transition hover:bg-red-500/20"
                   >
@@ -106,7 +125,8 @@ const LogosList = () => {
                   </button>
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

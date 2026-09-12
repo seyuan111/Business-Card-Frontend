@@ -7,6 +7,7 @@ import { CARD_THEMES } from '../utils/cardThemes';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import { getUserScopedKey, hasToken } from '../utils/auth';
+import { readCreatedLogos } from '../utils/logos';
 import { useSnackbar } from 'notistack';
 
 const defaultForm = {
@@ -74,6 +75,7 @@ const EditCard = () => {
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
   const [websiteError, setWebsiteError] = useState('');
+  const [savedLogos, setSavedLogos] = useState([]);
   const { enqueueSnackbar } = useSnackbar();
   const storageKey = useMemo(() => getUserScopedKey('generatedCards'), []);
 
@@ -111,6 +113,10 @@ const EditCard = () => {
     }
   }, [id, storageKey]);
 
+  useEffect(() => {
+    setSavedLogos(readCreatedLogos());
+  }, []);
+
   const handleChange = (field) => (event) => {
     const value = event.target.value;
     if (field === 'website') {
@@ -138,6 +144,11 @@ const EditCard = () => {
       setForm((prev) => ({ ...prev, logoPreview: reader.result || '' }));
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleSavedLogoChange = (event) => {
+    const selectedLogo = savedLogos.find((logo) => String(logo.id) === event.target.value);
+    setForm((prev) => ({ ...prev, logoPreview: selectedLogo?.logoPreview || '' }));
   };
 
   const handleWebsiteBlur = () => {
@@ -394,6 +405,18 @@ City, ST ZIP`}
                   onChange={handleLogoChange}
                   className="mt-3 block w-full text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-slate-200"
                 />
+                {savedLogos.length > 0 && (
+                  <select
+                    defaultValue=""
+                    onChange={handleSavedLogoChange}
+                    className="mt-2 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400"
+                  >
+                    <option value="">Or choose a saved logo</option>
+                    {savedLogos.map((logo) => (
+                      <option key={logo.id} value={logo.id}>{logo.companyName}</option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div>

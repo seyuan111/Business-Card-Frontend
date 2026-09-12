@@ -1,42 +1,44 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Sparkles, Zap, Palette, Download } from 'lucide-react'
-
-const STORAGE_KEY = 'createdLogos'
+import { createLogoSvg, LOGO_STORAGE_KEY, svgToDataUrl } from '../utils/logos'
 
 const CreateLogo = () => {
   const navigate = useNavigate()
   const [companyName, setCompanyName] = useState('')
-  const [industry, setIndustry] = useState('')
-  const [customIndustry, setCustomIndustry] = useState('')
+  const [selectedIcon, setSelectedIcon] = useState({ id: 'sparkles', label: 'Sparkles' })
+  const selectedIndustry = selectedIcon.label
+  const logoSvg = createLogoSvg(companyName, selectedIndustry, selectedIcon.id)
+  const logoPreview = svgToDataUrl(logoSvg)
 
-  const handleIndustryChange = (e) => {
-    const selectedIndustry = e.target.value
-    setIndustry(selectedIndustry)
-
-    if (selectedIndustry !== 'other') {
-      setCustomIndustry('')
+  useEffect(() => {
+    try {
+      const savedIcon = JSON.parse(localStorage.getItem('selectedLogoIcon') || 'null')
+      if (savedIcon?.id && savedIcon?.label) {
+        setSelectedIcon({ id: savedIcon.id, label: savedIcon.label })
+        localStorage.removeItem('selectedLogoIcon')
+      }
+    } catch {
+      localStorage.removeItem('selectedLogoIcon')
     }
-  }
+  }, [])
 
   const handleCreateLogo = () => {
-    if (companyName.trim()) {
-      const selectedIndustry = industry === 'other' ? customIndustry.trim() : industry
-      const logoEntry = {
-        id: Date.now(),
-        companyName: companyName.trim(),
-        industry: selectedIndustry || 'General',
-        createdAt: new Date().toISOString(),
-      }
-
-      const existingLogos = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')
-      const updatedLogos = [logoEntry, ...existingLogos]
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedLogos))
-
-      navigate('/logos-list')
-    } else {
-      alert('Please enter your company name')
+    const logoEntry = {
+      id: Date.now(),
+      companyName: companyName.trim(),
+      industry: selectedIndustry,
+      icon: selectedIcon.id,
+      svg: logoSvg,
+      logoPreview,
+      createdAt: new Date().toISOString(),
     }
+
+    const existingLogos = JSON.parse(localStorage.getItem(LOGO_STORAGE_KEY) || '[]')
+    const updatedLogos = [logoEntry, ...existingLogos]
+    localStorage.setItem(LOGO_STORAGE_KEY, JSON.stringify(updatedLogos))
+
+    navigate('/logos-list')
   }
 
   return (
@@ -63,7 +65,7 @@ const CreateLogo = () => {
             <div className="space-y-6 mb-8">
               <div>
                 <label htmlFor="companyName" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Company Name *
+                  Company Name (Optional)
                 </label>
                 <input
                   type="text"
@@ -76,45 +78,29 @@ const CreateLogo = () => {
               </div>
 
               <div>
-                <label htmlFor="industry" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Industry (Optional)
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Choose your icon
                 </label>
-                <select
-                  id="industry"
-                  value={industry}
-                  onChange={handleIndustryChange}
-                  className="w-full px-6 py-4 border-2 border-gray-200 rounded-xl text-lg focus:border-blue-500 focus:outline-none transition-colors bg-white"
+                <button
+                  type="button"
+                  onClick={() => navigate('/choose-logo-icon')}
+                  className="flex w-full items-center justify-between rounded-xl border-2 border-gray-200 px-6 py-4 text-left transition-colors hover:border-blue-400 focus:border-blue-500 focus:outline-none"
                 >
-                  <option value="">Select your industry</option>
-                  <option value="technology">Technology</option>
-                  <option value="healthcare">Healthcare</option>
-                  <option value="finance">Finance</option>
-                  <option value="retail">Retail</option>
-                  <option value="education">Education</option>
-                  <option value="food">Food & Beverage</option>
-                  <option value="real-estate">Real Estate</option>
-                  <option value="consulting">Consulting</option>
-                  <option value="creative">Creative & Design</option>
-                  <option value="other">Other</option>
-                </select>
-
-                {industry === 'other' && (
-                  <div className="mt-3">
-                    <label htmlFor="customIndustry" className="block text-sm font-semibold text-gray-700 mb-2">
-                      Specify your industry
-                    </label>
-                    <input
-                      type="text"
-                      id="customIndustry"
-                      value={customIndustry}
-                      onChange={(e) => setCustomIndustry(e.target.value)}
-                      placeholder="Type your industry"
-                      className="w-full px-6 py-4 border-2 border-gray-200 rounded-xl text-lg focus:border-blue-500 focus:outline-none transition-colors"
-                    />
-                  </div>
-                )}
+                  <span>
+                    <span className="block text-lg font-semibold text-slate-800">{selectedIcon.label}</span>
+                    <span className="block text-sm text-slate-500">Search the icon library</span>
+                  </span>
+                  <Sparkles className="h-5 w-5 text-blue-600" />
+                </button>
               </div>
             </div>
+
+            {logoPreview && (
+              <div className="mb-8 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="mb-3 text-sm font-semibold text-slate-700">Live preview</p>
+                <img src={logoPreview} alt={`${companyName} logo preview`} className="mx-auto aspect-[10/7] w-full max-w-md rounded-xl object-cover shadow-sm" />
+              </div>
+            )}
 
             {/* CTA Buttons */}
             <div className="space-y-3">
