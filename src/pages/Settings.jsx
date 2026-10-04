@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import NavBar from '../components/NavBar';
 import { useAuth } from '../context/AuthContext';
+import { getAuthConfig } from '../utils/auth';
 
 const Settings = () => {
   const { user, isAuthenticated, loading: authLoading, setUser } = useAuth();
@@ -38,11 +39,6 @@ const Settings = () => {
     );
     return Math.round((filled.length / 5) * 100);
   }, [profile]);
-
-  const authHeaders = useMemo(() => {
-    const token = localStorage.getItem('token');
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -124,8 +120,7 @@ const Settings = () => {
         bio: profile.bio,
       };
       await axios.put(`${import.meta.env.VITE_BACKEND_URL}/users/update-profile`, payload, {
-        headers: authHeaders,
-        withCredentials: true,
+        ...getAuthConfig(),
       });
 
       const nextUser = { ...(user || {}), ...payload };
@@ -155,10 +150,7 @@ const Settings = () => {
           currentPassword: passwords.currentPassword,
           newPassword: passwords.newPassword,
         },
-        {
-          headers: authHeaders,
-          withCredentials: true,
-        }
+        getAuthConfig()
       );
       setBanner({ type: 'success', text: 'Password updated. Security tightened.' });
       setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -325,6 +317,8 @@ const Settings = () => {
                       name="currentPassword"
                       value={passwords.currentPassword}
                       onChange={handlePasswordChange}
+                      autoComplete="current-password"
+                      required
                       className="w-full rounded-xl border border-white/10 bg-white/10 px-3 py-3 text-sm text-white placeholder:text-slate-300/60 shadow-inner shadow-black/10 outline-none transition focus:border-emerald-300/60 focus:ring-2 focus:ring-emerald-300/40"
                       placeholder="********"
                     />
@@ -341,6 +335,9 @@ const Settings = () => {
                       name="newPassword"
                       value={passwords.newPassword}
                       onChange={handlePasswordChange}
+                      autoComplete="new-password"
+                      minLength={8}
+                      required
                       className="w-full rounded-xl border border-white/10 bg-white/10 px-3 py-3 text-sm text-white placeholder:text-slate-300/60 shadow-inner shadow-black/10 outline-none transition focus:border-emerald-300/60 focus:ring-2 focus:ring-emerald-300/40"
                       placeholder="At least 8 characters"
                     />
@@ -360,6 +357,8 @@ const Settings = () => {
                       name="confirmPassword"
                       value={passwords.confirmPassword}
                       onChange={handlePasswordChange}
+                      autoComplete="new-password"
+                      required
                       className="w-full rounded-xl border border-white/10 bg-white/10 px-3 py-3 text-sm text-white placeholder:text-slate-300/60 shadow-inner shadow-black/10 outline-none transition focus:border-emerald-300/60 focus:ring-2 focus:ring-emerald-300/40"
                       placeholder="Repeat new password"
                     />
