@@ -1,153 +1,113 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+﻿import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, ArrowUpRight, Check, Upload, Sparkles } from 'lucide-react';
 import NavBar from '../components/NavBar';
 import Sliders from '../components/Sliders';
-import HowItWorks from '../components/HowItWorks'
-import CreateLogo from '../components/CreateLogo'
+import HowItWorks from '../components/HowItWorks';
+import CreateLogo from '../components/CreateLogo';
 import Reviews from '../components/Reviews';
 import Footer from '../components/Footer';
-import BusinessCardNextGen from '../assets/BusinessCardNextGen.jpeg'
-
-const heroImage =
-  'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=2000&q=80';
+import { CARD_DRAFT_KEY, readCardDraft } from '../utils/cardDraft';
+import './Hero.css';
 
 const Hero = () => {
-  // Animation variants for framer-motion
-  const fadeInUp = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+  const [draft] = useState(readCardDraft);
+  const [businessName, setBusinessName] = useState(draft.businessName);
+  const [logoPreview, setLogoPreview] = useState(draft.logoPreview);
+  const [uploadError, setUploadError] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const navigate = useNavigate();
+  const displayName = businessName.trim() || 'FORMA';
+
+  const handleStart = (event) => {
+    event.preventDefault();
+    try {
+      sessionStorage.setItem(CARD_DRAFT_KEY, JSON.stringify({ businessName: businessName.trim(), logoPreview }));
+      navigate('/generate-card');
+    } catch {
+      setUploadError('Your browser could not save this draft. Please allow session storage and try again.');
+    }
   };
 
-  const staggerContainer = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.2 },
-    },
+  const handleUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    event.target.value = '';
+    setUploadError('');
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || file.size > 2 * 1024 * 1024) {
+      setUploadError('Choose a PNG, JPG, or WebP image under 2 MB.');
+      return;
+    }
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onload = () => { setLogoPreview(reader.result); setUploading(false); };
+    reader.onerror = () => { setUploadError('This image could not be read. Please try another file.'); setUploading(false); };
+    reader.readAsDataURL(file);
   };
 
   return (
-    <div className="relative w-full min-h-screen bg-gradient-to-b from-blue-50 via-white to-blue-50">
-      {/* Navigation Bar */}
-      <NavBar className="sticky top-0 z-50" />
-
-      {/* Hero Section */}
-      <div className="relative flex min-h-[calc(100vh-80px)] flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
-        {/* Background Image with Overlay */}
-        <div className="absolute inset-0 z-0">
-              <img
-                src={heroImage}
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = BusinessCardNextGen;
-                }}
-                alt="Business Card Background"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-black/40"></div>
-        </div>
-
-        {/* Main Content - Now with relative positioning and z-index */}
-        <motion.div
-          className="relative z-10 text-center max-w-4xl mx-auto"
-          initial="hidden"
-          animate="visible"
-          variants={staggerContainer}
-        >
-          {/* Main Heading - Changed to white text for visibility */}
-          <motion.h1
-            className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight text-white mb-6"
-            variants={fadeInUp}
-          >
-            The Next Card Generation
-          </motion.h1>
-
-          {/* Subheading - Changed to light gray for visibility */}
-          <motion.h2
-            className="mt-4 text-lg sm:text-xl lg:text-2xl text-gray-100 max-w-3xl mx-auto"
-            variants={fadeInUp}
-          >
-            Generate your own business card online.
-          </motion.h2>
-
-          {/* Description - Changed to light gray for visibility */}
-          <motion.p
-            className="mt-4 text-base sm:text-lg text-gray-200 max-w-3xl mx-auto"
-            variants={fadeInUp}
-          >
-            add your name address email etc and your business card will generate.
-          </motion.p>
-
-          {/* Call-to-Action Buttons */}
-          <motion.div
-            className="mt-8 flex flex-col sm:flex-row justify-center gap-4"
-            variants={fadeInUp}
-          >
-            <Link
-              to="/generate-card"
-              className="relative bg-gradient-to-r from-blue-600 to-blue-800 py-3 px-8 rounded-lg text-white font-semibold shadow-lg hover:shadow-xl transition duration-300 ease-in-out transform hover:scale-105"
-              aria-label="View business cards"
-            >
-              Generate Your Business Card
-              <span className="ml-2">→</span>
-            </Link>
-            <Link
-              to="/cards/create"
-              className="relative bg-gradient-to-r from-red-600 to-red-800 py-3 px-8 rounded-lg text-white font-semibold shadow-lg hover:shadow-xl transition duration-300 ease-in-out transform hover:scale-105"
-              aria-label="View business cards"
-            >
-              Add your contact
-              <span className="ml-2">→</span>
-            </Link>
-            <Link
-              to="/about"
-              className="relative bg-transparent py-3 px-8 rounded-lg border-2 border-white text-white font-semibold hover:bg-white hover:text-blue-600 transition duration-300 ease-in-out transform hover:scale-105"
-              aria-label="Frequently Asked Questions"
-            >
-              FAQ
-              <span className="ml-2">?</span>
-            </Link>
-          </motion.div>
-        </motion.div>
-
-        {/* Scroll Down Indicator */}
-        <motion.div
-          className="absolute bottom-8 z-10"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
-        >
-          <svg
-            className="w-6 h-6 text-white"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M19 14l-7 7m0 0l-7-7m7 7V3"
-            ></path>
+    <div className="homepage">
+      <NavBar />
+      <main>
+        <section className="card-hero" aria-labelledby="hero-heading">
+          <svg className="card-hero__waves" viewBox="0 0 1600 850" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M680-50C310 190 420 490 975 535S1480 710 1680 420V900H-80V-50Z" fill="#1b1c1e" />
+            <path d="M-100 180C260 610 640 280 1050 565S1500 740 1700 590V900H-100Z" fill="#202123" opacity=".65" />
+            <path d="M-100 355C260 735 570 420 1050 685S1510 870 1700 725V900H-100Z" fill="#27282a" opacity=".48" />
+            <path d="M-100 535C300 830 600 555 1030 785S1450 970 1700 850V950H-100Z" fill="#303133" opacity=".32" />
           </svg>
-        </motion.div>
-      </div>
-
-      {/* Sliders and Reviews Sections */}
-      <motion.div
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-50px' }}
-        transition={{ duration: 0.8 }}
-      >
+          <div className="card-hero__inner">
+            <div className="card-hero__copy">
+              <div className="card-hero__eyebrow"><Sparkles size={14} aria-hidden="true" /><span>A little AI. A lasting impression.</span></div>
+              <h1 id="hero-heading">Card-Ology<br />Card Maker<span className="card-hero__period">.</span></h1>
+              <p className="card-hero__description">Your next great connection starts with a great card.<br className="desktop-break" /> Create a business card that feels uniquely you.</p>
+              <form className="card-hero__form" onSubmit={handleStart}>
+                <label htmlFor="hero-business-name">Create your own Business Card.</label>
+                <div className="card-hero__input-row">
+                  <input id="hero-business-name" name="businessName" autoComplete="organization" maxLength={80}
+                    value={businessName} onChange={(event) => setBusinessName(event.target.value)} placeholder="Enter your business name" />
+                  <button type="submit" disabled={uploading}>Start Now<ArrowRight size={18} aria-hidden="true" /></button>
+                </div>
+                <div className="card-hero__upload-row">
+                  <span>Already have a logo?</span>
+                  <label className="card-hero__upload">
+                    <input type="file" accept="image/png,image/jpeg,image/webp" onChange={handleUpload} disabled={uploading} aria-label="Upload your logo" aria-describedby="hero-upload-status" />
+                    <Upload size={15} aria-hidden="true" /><span>{uploading ? 'Reading logo…' : logoPreview ? 'Change Your Logo' : 'Upload Your Logo'}</span>
+                  </label>
+                </div>
+                <div id="hero-upload-status" className="card-hero__status" role="status">
+                  {uploadError || (logoPreview ? 'Logo added. Your preview is ready.' : '')}
+                  {logoPreview && !uploadError && <button type="button" onClick={() => setLogoPreview('')}>Remove</button>}
+                </div>
+              </form>
+              <div className="card-hero__benefits"><span><Check size={14} />Easy to customize</span><span><Check size={14} />Made for your brand</span></div>
+            </div>
+            <div className="card-showcase" role="img" aria-label={`Overlapping charcoal and ivory business card mockups for ${displayName}`}>
+              <div className="card-showcase__halo" />
+              <div className="business-mockup business-mockup--back">
+                <div className="mockup-brand">
+                  {logoPreview ? <img src={logoPreview} alt="" className="mockup-logo" /> : <span className="forma-symbol" />}
+                  <span className="mockup-brand__name">{displayName}</span>
+                  <span className="mockup-brand__tagline">DESIGNED TO CONNECT</span>
+                </div>
+                <span className="mockup-back__footer">GOOD DESIGN. GREAT CONNECTIONS.</span>
+              </div>
+              <div className="business-mockup business-mockup--front">
+                <div className="mockup-front__top"><span className="mockup-front__brand">{displayName}<span>®</span></span><span className="mockup-front__spark">✳</span></div>
+                <div className="mockup-front__person"><strong>Alex Morgan</strong><span>Founder & Creative Director</span></div>
+                <div className="mockup-front__bottom"><div><span>hello@yourbrand.com</span><span>+1 (212) 555 0148</span><span>www.yourbrand.com</span></div><span className="mockup-front__arrow">↗</span></div>
+              </div>
+              <div className="card-showcase__caption"><span />YOUR BRAND. BEAUTIFULLY CONNECTED.</div>
+            </div>
+          </div>
+          <div className="card-hero__footer"><span>Small card. Endless possibilities.</span><Link to="/generate-card">Make something memorable<ArrowUpRight size={15} aria-hidden="true" /></Link></div>
+        </section>
         <Sliders />
         <HowItWorks />
         <CreateLogo />
         <Reviews />
-        <Footer />
-      </motion.div>
+      </main>
+      <Footer />
     </div>
   );
 };

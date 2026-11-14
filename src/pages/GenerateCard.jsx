@@ -1,542 +1,88 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, ArrowRight, Check, Sparkles, Upload } from 'lucide-react';
 import NavBar from '../components/NavBar';
-import BackButton from '../components/BackButton';
-import { isEmail } from '../utils/email';
-import BusinessCardNextGen from '../assets/BusinessCardNextGen.jpeg';
-import { useSnackbar } from 'notistack';
-import { getUserScopedKey, hasToken } from '../utils/auth';
+import CardArtwork from '../components/studio/CardArtwork';
+import { createScene, newId, readImageFile, saveCard } from '../utils/cardStudio';
+import { readCardDraft, CARD_DRAFT_KEY } from '../utils/cardDraft';
 import { readCreatedLogos } from '../utils/logos';
-
-const cardBackground =
-  'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=2000&q=80';
-import { CARD_THEMES, getCardTheme } from '../utils/cardThemes';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import 'swiper/css';
-
-// Website helpers
-const isWebsite = (value = '') => {
-  const v = value.trim();
-  if (!v) return true; // optional
-
-  const withProtocol = /^https?:\/\//i.test(v) ? v : `https://${v}`;
-  try {
-    const url = new URL(withProtocol);
-    return url.hostname.includes('.');
-  } catch {
-    return false;
-  }
-};
-
-const normalizeWebsite = (value = '') => {
-  const v = value.trim();
-  if (!v) return '';
-  return /^https?:\/\//i.test(v) ? v : `https://${v}`;
-};
+import { isEmail } from '../utils/email';
+import './CardStudio.css';
 
 const GenerateCard = () => {
-  const [name, setName] = useState('');
-  const [address, setAddress] = useState('');
-  const [email, setEmail] = useState('');
-  const [occupation, setOccupation] = useState('');
-  const [contact, setContact] = useState('');
-  const [fax, setFax] = useState('');
-  const [slogan, setSlogan] = useState('');
-  const [website, setWebsite] = useState('');
-  const [websiteError, setWebsiteError] = useState('');
-
-  const [logoFile, setLogoFile] = useState(null);
-  const [logoPreview, setLogoPreview] = useState('');
-  const [savedLogos, setSavedLogos] = useState([]);
-  const [design, setDesign] = useState('classic');
-
+  const [form, setForm] = useState(() => {
+    const draft = readCardDraft();
+    return { name: '', businessName: draft.businessName || '', occupation: '', email: '', contact: '', website: '', address: '', fax: '', slogan: '', logoPreview: draft.logoPreview || '' };
+  });
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [savedLogos] = useState(() => { try { return readCreatedLogos(); } catch { return []; } });
   const navigate = useNavigate();
-  const { enqueueSnackbar } = useSnackbar();
-  const storageKey = useMemo(() => getUserScopedKey('generatedCards'), []);
-  const theme = getCardTheme(design);
-  const useDarkText = design === 'minimal' || theme.forceDarkText;
-  const detailTextColor = useDarkText ? 'text-gray-800' : 'text-white';
-  const subTextColor = theme.sub || (useDarkText ? 'text-gray-600' : 'text-white/80');
-
-  useEffect(() => {
-    if (!hasToken()) {
-      enqueueSnackbar('Please log in to generate a card.', { variant: 'warning' });
-      navigate('/Login');
+  const change = event => setForm(previous => ({ ...previous, [event.target.name]: event.target.value }));
+  const upload = async event => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setError(''); setBusy(true);
+    try { const image = await readImageFile(file); setForm(previous => ({ ...previous, logoPreview: image.src })); }
+    catch (err) { setError(err.message); }
+    finally { setBusy(false); }
+  };
+  const generate = event => {
+    event.preventDefault();
+    setError('');
+    if (!form.name.trim() || !isEmail(form.email)) { setError('Please enter your name and a valid email address.'); return; }
+    let website = form.website.trim();
+    if (website) {
+      try {
+        website = /^https?:\/\//i.test(website) ? website : `https://${website}`;
+        const url = new URL(website);
+        if (!['http:', 'https:'].includes(url.protocol) || !url.hostname.includes('.')) throw new Error();
+      } catch { setError('Please enter a valid website, such as yourstudio.com.'); return; }
     }
-  }, [enqueueSnackbar, navigate]);
-
-  useEffect(() => {
-    setSavedLogos(readCreatedLogos());
     try {
-      const selectedLogo = JSON.parse(localStorage.getItem('selectedLogoForCard') || 'null');
-      if (selectedLogo?.logoPreview) {
-        setLogoPreview(selectedLogo.logoPreview);
-        localStorage.removeItem('selectedLogoForCard');
-      }
-    } catch {
-      localStorage.removeItem('selectedLogoForCard');
-    }
-  }, []);
-
-  const saveCardToStorage = () => {
-    const card = {
-      id: Date.now(),
-      name,
-      address,
-      email,
-      occupation,
-      contact,
-      fax,
-      slogan,
-      website: normalizeWebsite(website),
-      logoPreview,
-      design,
-      createdAt: new Date().toISOString(),
-    };
-
-    try {
-      const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
-      existing.unshift(card);
-      localStorage.setItem(storageKey, JSON.stringify(existing));
-    } catch (err) {
-      console.error('Failed to save card', err);
-    }
+      const card = { ...Object.fromEntries(Object.entries(form).map(([key, value]) => [key, value.trim()])), website, id: newId(), design: 'studio', createdAt: new Date().toISOString() };
+      saveCard(card);
+      try { sessionStorage.removeItem(CARD_DRAFT_KEY); } catch { /* The card is already saved. */ }
+      navigate(`/get-cards?generated=${card.id}`);
+    } catch { setError('Your card could not be saved. Free up some browser storage or use a smaller logo and try again.'); }
   };
-
-  const formatPhoneNumber = (value) => {
-    let numbers = value.replace(/\D/g, '');
-    if (numbers.length > 3 && numbers.length <= 6) {
-      numbers = `(${numbers.slice(0, 3)}) ${numbers.slice(3)}`;
-    } else if (numbers.length > 6) {
-      numbers = `(${numbers.slice(0, 3)}) ${numbers.slice(3, 6)}-${numbers.slice(
-        6,
-        10
-      )}`;
-    } else if (numbers.length <= 3) {
-      numbers = `(${numbers.slice(0, 3)}`;
-    }
-    return numbers;
-  };
-
-  const handleContactChange = (e) => {
-    const formatted = formatPhoneNumber(e.target.value);
-    setContact(formatted);
-  };
-
-  const handleFaxChange = (e) => {
-    const formatted = formatPhoneNumber(e.target.value);
-    setFax(formatted);
-  };
-
-  const handleLogoChange = (e) => {
-    const file = e.target.files && e.target.files[0];
-    setLogoFile(file || null);
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setLogoPreview(reader.result || '');
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setLogoPreview('');
-    }
-  };
-
-  const handleSavedLogoChange = (e) => {
-    const selectedLogo = savedLogos.find((logo) => String(logo.id) === e.target.value);
-    setLogoFile(null);
-    setLogoPreview(selectedLogo?.logoPreview || '');
-  };
-
-  const handleWebsiteBlur = () => {
-    if (!isWebsite(website)) {
-      setWebsiteError('Please enter a valid website (e.g., nike.com).');
-    } else {
-      setWebsiteError('');
-      setWebsite(normalizeWebsite(website));
-    }
-  };
-
-  const canGenerate =
-    name.trim() &&
-    email.trim() &&
-    contact.trim() &&
-    isEmail(email) &&
-    isWebsite(website);
-
-  const handleGenerate = () => {
-    if (!hasToken()) {
-      enqueueSnackbar('Please log in to generate a card.', { variant: 'warning' });
-      navigate('/Login');
-      return;
-    }
-
-    if (!canGenerate) return;
-    saveCardToStorage();
-    navigate('/get-cards');
-  };
-
-  return (
-    <div className="relative min-h-screen">
-      <div className="absolute inset-0 -z-10">
-        <img
-          src={cardBackground}
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src = BusinessCardNextGen;
-          }}
-          alt="Business Card Background"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+  return <div className="studio-page">
+    <NavBar />
+    <main className="generator-shell">
+      <Link to="/" className="studio-back"><ArrowLeft size={16} />Back to home</Link>
+      <div className="studio-stepper"><span className="is-current">1 <span>Your details</span></span><i /><span>2 <span>Choose a design</span></span><i /><span>3 <span>Make it yours</span></span></div>
+      <div className="generator-layout">
+        <section>
+          <p className="studio-eyebrow"><Sparkles size={14} />LET’S MAKE AN INTRODUCTION</p>
+          <h1>Your brand.<br />Your next great connection.</h1>
+          <p className="studio-description">Add your details. We’ll turn them into a collection of cards made for you.</p>
+          <form onSubmit={generate} className="generator-form">
+            <div className="generator-fields">
+              {[
+                ['name', 'Full name', 'Alex Morgan', true], ['businessName', 'Business name', 'Your Studio'],
+                ['occupation', 'Job title', 'Founder & Creative Director'], ['email', 'Email address', 'hello@yourstudio.com', true],
+                ['contact', 'Phone number', '+1 (212) 555 0148'], ['website', 'Website', 'yourstudio.com'],
+                ['address', 'Address', 'Street, City, State'], ['fax', 'Fax (optional)', ''], ['slogan', 'Tagline (optional)', 'A few words about your brand'],
+              ].map(([name, label, placeholder, required]) => <label className={name === 'slogan' ? 'full-width' : ''} key={name}>{label}{required && <span className="required"> *</span>}
+                <input name={name} type={name === 'email' ? 'email' : ['contact','fax'].includes(name) ? 'tel' : 'text'} required={required} maxLength={name === 'address' ? 200 : 100} value={form[name]} placeholder={placeholder} onChange={change} autoComplete={name === 'name' ? 'name' : name === 'email' ? 'email' : name === 'businessName' ? 'organization' : 'off'} />
+              </label>)}
+            </div>
+            <div className="generator-logo">
+              {form.logoPreview && <img src={form.logoPreview} alt="Your uploaded logo" />}
+              <label className="studio-upload"><Upload size={17} />{busy ? 'Reading image…' : form.logoPreview ? 'Change logo' : 'Upload your logo'}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={upload} disabled={busy} /></label>
+              {form.logoPreview && <button type="button" className="studio-text-button" onClick={() => setForm(previous => ({ ...previous, logoPreview: '' }))}>Remove</button>}
+              <small>PNG, JPG, or WebP · up to 3 MB</small>
+            </div>
+            {savedLogos.length > 0 && <label className="studio-field">Or use a saved logo<select defaultValue="" onChange={event => setForm(previous => ({ ...previous, logoPreview: savedLogos.find(logo => String(logo.id) === event.target.value)?.logoPreview || '' }))}><option value="">Choose a logo</option>{savedLogos.map(logo => <option key={logo.id} value={logo.id}>{logo.companyName || 'Untitled logo'}</option>)}</select></label>}
+            {error && <p className="studio-error" role="alert">{error}</p>}
+            <button className="studio-button studio-button--primary generator-submit" disabled={busy}>Generate My Cards<ArrowRight size={17} /></button>
+            <p className="generator-note"><Check size={13} />Design freely. Create an account when you’re ready to download.</p>
+          </form>
+        </section>
+        <aside className="generator-preview"><span className="studio-eyebrow">A FIRST LOOK AT YOUR NEXT INTRODUCTION</span><div className="generator-preview__card"><CardArtwork scene={createScene(form, 'studio')} /></div><span className="generator-preview__caption">Small card. Big possibilities.</span><p>Choose from nine curated designs next.<br />Every detail is yours to change.</p></aside>
       </div>
-
-      <NavBar />
-      <div className="pt-24 p-4 max-w-4xl mx-auto">
-        <div className="flex items-center gap-3 mb-4">
-          <BackButton />
-          <h1 className="text-2xl font-bold text-white drop-shadow">
-            Generate Business Card
-          </h1>
-        </div>
-
-        <div className="bg-white/90 backdrop-blur-md shadow-xl rounded-lg p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* LEFT */}
-            <div className="space-y-4">
-              <div className="flex flex-col">
-                <label className="text-gray-400 text-sm font-medium flex items-center">
-                  Name <span className="text-red-500 ml-1">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-400 focus:outline-none"
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-gray-400 text-sm font-medium">Address</label>
-                <textarea
-                  rows={3}
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder={`Company (optional)
-Street address
-City, ST ZIP`}
-                  className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-400 focus:outline-none resize-none leading-relaxed"
-                />
-                <small className="text-gray-500 mt-1">
-                  Format:
-                  <br />
-                  Burger King Company
-                  <br />
-                  12 West Ave
-                  <br />
-                  Bronx, NY 10222
-                </small>
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-gray-400 text-sm font-medium flex items-center">
-                  Email <span className="text-red-500 ml-1">*</span>
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-400 focus:outline-none"
-                />
-              </div>
-
-              {/* WEBSITE */}
-              <div className="flex flex-col">
-                <label className="text-gray-400 text-sm font-medium">
-                  Website (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={website}
-                  onChange={(e) => setWebsite(e.target.value)}
-                  onBlur={handleWebsiteBlur}
-                  placeholder="nike.com"
-                  className={`border rounded-lg px-4 py-2 focus:ring-2 focus:outline-none ${
-                    websiteError
-                      ? 'border-rose-400 focus:ring-rose-300'
-                      : 'border-gray-300 focus:ring-sky-400'
-                  }`}
-                />
-                {websiteError && (
-                  <small className="text-rose-600 mt-1">{websiteError}</small>
-                )}
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-gray-400 text-sm font-medium">Occupation</label>
-                <input
-                  type="text"
-                  value={occupation}
-                  onChange={(e) => setOccupation(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-400 focus:outline-none"
-                />
-              </div>
-            </div>
-
-            {/* RIGHT */}
-            <div className="space-y-4">
-              <div className="flex flex-col">
-                <label className="text-gray-400 text-sm font-medium flex items-center">
-                  Contact <span className="text-red-500 ml-1">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={contact}
-                  onChange={handleContactChange}
-                  className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-400 focus:outline-none"
-                  placeholder="(111) 222-5555"
-                />
-                <small className="text-gray-500 mt-1">Format: (111) 222-5555</small>
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-gray-400 text-sm font-medium">
-                  Fax (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={fax}
-                  onChange={handleFaxChange}
-                  className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-400 focus:outline-none"
-                  placeholder="(111) 222-5555"
-                />
-                <small className="text-gray-500 mt-1">Format: (111) 222-5555</small>
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-gray-400 text-sm font-medium">
-                  Slogan (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={slogan}
-                  onChange={(e) => setSlogan(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-400 focus:outline-none"
-                  placeholder="e.g., Excellence in Every Detail"
-                />
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-gray-400 text-sm font-medium">
-                  Logo (Optional)
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleLogoChange}
-                  className="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-sky-400 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100"
-                />
-                {savedLogos.length > 0 && (
-                  <select
-                    defaultValue=""
-                    onChange={handleSavedLogoChange}
-                    className="mt-2 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-sky-400 focus:outline-none"
-                  >
-                    <option value="">Or choose a saved logo</option>
-                    {savedLogos.map((logo) => (
-                      <option key={logo.id} value={logo.id}>{logo.companyName}</option>
-                    ))}
-                  </select>
-                )}
-                {logoPreview && (
-                  <div className="mt-2 flex items-center gap-3">
-                    <img
-                      src={logoPreview}
-                      alt="Logo preview"
-                      className="h-12 w-12 rounded-lg object-cover border border-slate-200"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setLogoFile(null);
-                        setLogoPreview('');
-                      }}
-                      className="text-sm text-rose-600 hover:underline"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <p className="text-sm font-medium text-gray-600 mb-2">
-                 Swipe To Choose Your Card Design
-                </p>
-                <Swiper
-                  spaceBetween={12}
-                  slidesPerView={1.1}
-                  breakpoints={{
-                    640: { slidesPerView: 2 },
-                    960: { slidesPerView: 3 },
-                  }}
-                >
-                  {Object.entries(CARD_THEMES).map(([key, item]) => {
-                    const isActive = design === key;
-                    return (
-                      <SwiperSlide key={key}>
-                        <button
-                          type="button"
-                          onClick={() => setDesign(key)}
-                          className="w-full text-left group"
-                        >
-                          <div
-                            className={`relative h-28 rounded-2xl overflow-hidden transition ring-1 ring-black/5 shadow-md ${item.base} ${
-                              isActive ? 'ring-2 ring-sky-400 scale-[1.01] shadow-lg' : ''
-                            }`}
-                          >
-                            <div className="absolute inset-0 overflow-hidden">
-                              {(item.accentElements || []).map((cls, idx) => (
-                                <span key={idx} className={`absolute ${cls}`} />
-                              ))}
-                            </div>
-                            <div className="relative h-full flex flex-col justify-between p-3">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[11px] uppercase tracking-wide font-semibold">
-                                  {item.labelText}
-                                </span>
-                              </div>
-                              <div>
-                                <p className="text-sm font-semibold">Your Name</p>
-                                <p className={`text-[11px] ${item.sub || 'text-white/80'}`}>
-                                  Role / Title
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                          <span
-                            className={`mt-2 block text-center text-sm font-semibold transition ${
-                              isActive ? 'text-sky-600' : 'text-slate-600 group-hover:text-slate-800'
-                            }`}
-                          >
-                            {item.labelText}
-                          </span>
-                        </button>
-                      </SwiperSlide>
-                    );
-                  })}
-                </Swiper>
-              </div>
-            </div>
-          </div>
-
-          {/* Live preview */}
-          <div className="mt-4">
-            <p className="text-sm font-semibold text-gray-700 mb-2">
-              Live Preview
-            </p>
-            <div className="border-2 border-dashed border-gray-200 rounded-xl p-4">
-              <div
-                className={`mx-auto max-w-lg rounded-xl shadow-xl overflow-hidden ${theme.base}`}
-              >
-                <div className="p-5 flex items-center gap-4">
-                  {logoPreview && (
-                    <div
-                      className={`w-16 h-16 rounded-md overflow-hidden flex items-center justify-center ${
-                        theme.logoBg || ''
-                      }`}
-                    >
-                      <img
-                        src={logoPreview}
-                        alt="Logo"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-                  <div className="min-w-0">
-                    <div className="text-xl font-bold truncate">
-                      {name || 'Your Name'}
-                    </div>
-                    <div className={`text-sm truncate ${theme.sub || 'text-white/80'}`}>
-                      {occupation || 'Your Title'}
-                    </div>
-                    {slogan.trim() && (
-                      <div className={`text-xs italic ${subTextColor}`}>
-                        "{slogan.trim()}"
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="px-5 pb-5 text-sm space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className={subTextColor}>Email:</span>
-                    <span className={`truncate ${detailTextColor}`}>
-                      {email || 'you@example.com'}
-                    </span>
-                  </div>
-
-                  {website.trim() && (
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className={subTextColor}>Website:</span>
-                      <span className={`truncate ${detailTextColor}`}>
-                        {website.replace(/^https?:\/\//i, '')}
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-2">
-                    <span className={subTextColor}>Phone:</span>
-                    <span className={`truncate ${detailTextColor}`}>
-                      {contact || '(111) 222-5555'}
-                    </span>
-                  </div>
-
-                  {fax.trim() && (
-                    <div className="flex items-center gap-2">
-                      <span className={subTextColor}>Fax:</span>
-                      <span className={`truncate ${detailTextColor}`}>
-                        {fax}
-                      </span>
-                    </div>
-                  )}
-
-                  {address && (
-                    <div className="flex items-start gap-2 min-w-0">
-                      <span className={subTextColor}>Address:</span>
-                      <span className={`whitespace-pre-line leading-tight ${detailTextColor}`}>
-                        {address}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            <button
-              className={`w-full py-3 text-white font-semibold rounded-lg ${
-                canGenerate
-                  ? 'bg-sky-500 hover:bg-sky-600'
-                  : 'bg-gray-400 cursor-not-allowed'
-              }`}
-              onClick={handleGenerate}
-              disabled={!canGenerate}
-            >
-              Save & View My Cards
-            </button>
-            <Link
-              to="/get-cards"
-              className="block w-full py-3 text-center font-semibold rounded-lg bg-white/90 text-sky-700 hover:bg-white border border-slate-200"
-            >
-              Go to My Cards
-            </Link>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    </main>
+  </div>;
 };
-
 export default GenerateCard;

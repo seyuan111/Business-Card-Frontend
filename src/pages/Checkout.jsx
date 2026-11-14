@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import NavBar from '../components/NavBar';
+import CardArtwork from '../components/studio/CardArtwork';
+import './CardStudio.css';
 import { getCardTheme } from '../utils/cardThemes';
 
 // Website normalizer to keep links clickable when protocol is missing
@@ -191,7 +193,7 @@ const Checkout = () => {
             Please review your design carefully to ensure all information is accurate.
           </p>
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <div className={`relative overflow-hidden rounded-xl shadow-xl ${theme.base} px-6 py-5 h-[240px] w-full`}>
+            {card?.editorScene ? <div className="max-w-2xl mx-auto"><CardArtwork scene={card.editorScene} /></div> : <div className={`relative overflow-hidden rounded-xl shadow-xl ${theme.base} px-6 py-5 h-[240px] w-full`}>
               <div className="flex h-full gap-3">
                 {/* LEFT SIDE - mirror GetCards layout */}
                 <div className="flex-1 flex flex-col">
@@ -278,7 +280,7 @@ const Checkout = () => {
                   </div>
                 )}
               </div>
-            </div>
+            </div>}
           </div>
         </div>
 

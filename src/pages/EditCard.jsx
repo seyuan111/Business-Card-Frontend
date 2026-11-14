@@ -1,510 +1,280 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import NavBar from '../components/NavBar';
-import BackButton from '../components/BackButton';
-import { isEmail } from '../utils/email';
-import { CARD_THEMES } from '../utils/cardThemes';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import 'swiper/css';
-import { getUserScopedKey, hasToken } from '../utils/auth';
+import { useEffect, useReducer, useRef, useState } from 'react';
+import PropTypes from 'prop-types';
+import { Link, useParams } from 'react-router-dom';
+import { ArrowLeft, ArrowDown, ArrowUp, Check, ChevronDown, Copy, CreditCard, Download, Eye, ImagePlus, LayoutTemplate, MousePointer2, Palette, Plus, Printer, Redo2, Save, Shapes, Trash2, Type, Undo2, Upload, X, ZoomIn, ZoomOut } from 'lucide-react';
+import CardArtwork from '../components/studio/CardArtwork';
+import StudioDialog from '../components/studio/StudioDialog';
+import DownloadDialog from '../components/studio/DownloadDialog';
+import { CARD_HEIGHT, CARD_WIDTH, FONTS, TEMPLATES, cardWithScene, createScene, findCard, newId, readImageFile, saveCard, sceneFor, studioKey } from '../utils/cardStudio';
+import { downloadCard, printCard } from '../utils/cardExport';
 import { readCreatedLogos } from '../utils/logos';
-import { useSnackbar } from 'notistack';
+import './CardStudio.css';
 
-const defaultForm = {
-  name: '',
-  occupation: '',
-  contact: '',
-  fax: '',
-  email: '',
-  address: '',
-  slogan: '',
-  website: '',
-  design: 'classic',
-  logoPreview: '',
+const tools = [ ['Templates', LayoutTemplate], ['Text', Type], ['Background', Palette], ['Logo', CreditCard], ['Shapes', Shapes], ['Images', ImagePlus] ];
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+const historyReducer = (state, action) => {
+  if (action.type === 'undo') return state.past.length ? { past: state.past.slice(0, -1), present: state.past.at(-1), future: [state.present, ...state.future] } : state;
+  if (action.type === 'redo') return state.future.length ? { past: [...state.past, state.present], present: state.future[0], future: state.future.slice(1) } : state;
+  if (action.type === 'commit-drag') return JSON.stringify(action.before) !== JSON.stringify(state.present) ? { ...state, past: [...state.past.slice(-49), action.before], future: [] } : state;
+  const next = typeof action.next === 'function' ? action.next(state.present) : action.next;
+  if (JSON.stringify(next) === JSON.stringify(state.present)) return state;
+  return { past: action.record === false ? state.past : [...state.past.slice(-49), state.present], present: next, future: [] };
 };
 
-const formatPhoneNumber = (value) => {
-  let numbers = value.replace(/\D/g, '');
-  if (numbers.length > 3 && numbers.length <= 6) {
-    numbers = `(${numbers.slice(0, 3)}) ${numbers.slice(3)}`;
-  } else if (numbers.length > 6) {
-    numbers = `(${numbers.slice(0, 3)}) ${numbers.slice(3, 6)}-${numbers.slice(
-      6,
-      10
-    )}`;
-  } else if (numbers.length <= 3) {
-    numbers = `(${numbers.slice(0, 3)}`;
-  }
-  return numbers;
-};
+const CardEditor = ({ id }) => {
+  const [initial] = useState(() => {
+    try {
+      const card = findCard(id);
+      if (!card) return { error: 'We couldn’t find this design in your browser. Return to the gallery to choose a card.' };
+      let scene = sceneFor(card);
+      try {
+        const draft = JSON.parse(sessionStorage.getItem(`${studioKey('studioDraft')}:${id}`) || 'null');
+        if (draft?.version === 1 && Array.isArray(draft.elements)) scene = draft;
+      } catch { /* A saved card can still be opened if session storage is unavailable. */ }
+      return { card, scene };
+    } catch { return { error: 'This design could not be loaded. Please check browser storage and try again.' }; }
+  });
+  const [record, setRecord] = useState(initial.card || {});
+  const [history, dispatch] = useReducer(historyReducer, { past: [], present: initial.scene || createScene(), future: [] });
+  const scene = history.present;
+  const [savedScene, setSavedScene] = useState(JSON.stringify(initial.card ? sceneFor(initial.card) : scene));
+  const [selectedId, setSelectedId] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [activeTool, setActiveTool] = useState('Templates');
+  const [panelOpen, setPanelOpen] = useState(() => window.innerWidth > 900);
+  const [dialog, setDialog] = useState(null);
+  const [status, setStatus] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [zoom, setZoom] = useState(100);
+  const [canvasWidth, setCanvasWidth] = useState(700);
+  const [savedLogos] = useState(() => { try { return readCreatedLogos(); } catch { return []; } });
+  const fileRef = useRef(null);
+  const uploadKind = useRef('image');
+  const boardRef = useRef(null);
+  const drag = useRef(null);
+  const selected = scene.elements.find(element => element.id === selectedId);
+  const editing = scene.elements.find(element => element.id === editingId);
+  const dirty = JSON.stringify(scene) !== savedScene;
+  const scale = canvasWidth / CARD_WIDTH;
+  const edit = next => { dispatch({ type: 'edit', next }); setError(''); setStatus(''); };
+  const updateElement = (patch, elementId = selectedId) => edit(previous => ({ ...previous, elements: previous.elements.map(element => element.id === elementId ? { ...element, ...patch } : element) }));
 
-// Website helpers
-const isWebsite = (value = '') => {
-  const v = value.trim();
-  if (!v) return true;
-  const withProtocol = /^https?:\/\//i.test(v) ? v : `https://${v}`;
+  useEffect(() => {
+    if (!boardRef.current) return;
+    const observer = new ResizeObserver(entries => setCanvasWidth(entries[0].contentRect.width));
+    observer.observe(boardRef.current);
+    return () => observer.disconnect();
+  }, [initial.error]);
 
-  const hasDomainAndTld = (hostname = '') => {
-    const parts = hostname.toLowerCase().split('.').filter(Boolean);
-    // Drop leading www so we can require domain + tld after it
-    const remaining = parts[0] === 'www' && parts.length > 1 ? parts.slice(1) : parts;
-    if (remaining.length < 2) return false;
-    const tld = remaining[remaining.length - 1];
-    return /^[a-z]{2,24}$/i.test(tld);
+  useEffect(() => {
+    if (initial.error || !dirty) return;
+    const timer = setTimeout(() => {
+      try { sessionStorage.setItem(`${studioKey('studioDraft')}:${id}`, JSON.stringify(scene)); }
+      catch { setError('Automatic recovery is unavailable. Use Save Progress or reduce image sizes to protect your changes.'); }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [scene, id, dirty, initial.error]);
+
+  useEffect(() => {
+    if (!dirty) return;
+    const beforeUnload = event => { event.preventDefault(); event.returnValue = ''; };
+    window.addEventListener('beforeunload', beforeUnload);
+    return () => window.removeEventListener('beforeunload', beforeUnload);
+  }, [dirty]);
+
+  const persist = () => {
+    const next = cardWithScene({ ...record, design: scene.templateId || record.design }, scene);
+    saveCard(next);
+    setRecord(next);
+    setSavedScene(JSON.stringify(scene));
+    try { sessionStorage.removeItem(`${studioKey('studioDraft')}:${id}`); } catch { /* The permanent save succeeded. */ }
+    return next;
+  };
+  const save = () => {
+    try { persist(); setStatus('Progress saved in this browser.'); setError(''); }
+    catch { setError('Progress could not be saved. Free up browser storage or remove a large image and try again.'); }
+  };
+  const removeSelected = () => {
+    if (!selectedId) return;
+    edit(previous => ({ ...previous, elements: previous.elements.filter(element => element.id !== selectedId) }));
+    setSelectedId(null); setEditingId(null);
   };
 
-  try {
-    const url = new URL(withProtocol);
-    return hasDomainAndTld(url.hostname);
-  } catch {
-    return false;
-  }
-};
-
-const normalizeWebsite = (value = '') => {
-  const v = value.trim();
-  if (!v) return '';
-  return /^https?:\/\//i.test(v) ? v : `https://${v}`;
-};
-
-const EditCard = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const [form, setForm] = useState(defaultForm);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [status, setStatus] = useState('');
-  const [websiteError, setWebsiteError] = useState('');
-  const [savedLogos, setSavedLogos] = useState([]);
-  const { enqueueSnackbar } = useSnackbar();
-  const storageKey = useMemo(() => getUserScopedKey('generatedCards'), []);
-
   useEffect(() => {
-    if (!hasToken()) {
-      setError('Please log in to edit a card.');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
-      const card = stored.find((item) => String(item.id) === String(id));
-      if (!card) {
-        setError('We could not find that card. Head back and create one first.');
-      } else {
-        setForm({
-          name: card.name || '',
-          occupation: card.occupation || '',
-          contact: card.contact || '',
-          fax: card.fax || '',
-          email: card.email || '',
-          address: card.address || '',
-          slogan: card.slogan || '',
-          design: card.design || 'classic',
-          logoPreview: card.logoPreview || '',
-          website: card.website || '',
-        });
+    const keydown = event => {
+      if (dialog || event.target.closest('input,textarea,select,[contenteditable="true"]')) return;
+      const modifier = event.ctrlKey || event.metaKey;
+      if (modifier && event.key.toLowerCase() === 'z') { event.preventDefault(); dispatch({ type: event.shiftKey ? 'redo' : 'undo' }); return; }
+      if (modifier && event.key.toLowerCase() === 'y') { event.preventDefault(); dispatch({ type: 'redo' }); return; }
+      if (modifier && event.key.toLowerCase() === 's') { event.preventDefault(); save(); return; }
+      if (event.key === 'Escape') { setSelectedId(null); setEditingId(null); }
+      if (selected && ['Delete','Backspace'].includes(event.key)) { event.preventDefault(); removeSelected(); }
+      if (selected && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key)) {
+        event.preventDefault();
+        const amount = event.shiftKey ? 10 : 1;
+        const dx = event.key === 'ArrowLeft' ? -amount : event.key === 'ArrowRight' ? amount : 0;
+        const dy = event.key === 'ArrowUp' ? -amount : event.key === 'ArrowDown' ? amount : 0;
+        updateElement({ x: selected.x + dx, y: selected.y + dy });
       }
-    } catch (err) {
-      console.error('Failed to load card', err);
-      setError('Something went wrong while loading this card.');
-    } finally {
-      setLoading(false);
-    }
-  }, [id, storageKey]);
+    };
+    document.addEventListener('keydown', keydown);
+    return () => document.removeEventListener('keydown', keydown);
+  });
 
   useEffect(() => {
-    setSavedLogos(readCreatedLogos());
+    const media = window.matchMedia('(max-width: 900px)');
+    const adjustPanel = event => setPanelOpen(!event.matches);
+    media.addEventListener('change', adjustPanel);
+    return () => media.removeEventListener('change', adjustPanel);
   }, []);
 
-  const handleChange = (field) => (event) => {
-    const value = event.target.value;
-    if (field === 'website') {
-      // Keep website validation in sync with GetCards view
-      setWebsiteError(isWebsite(value) ? '' : 'Please enter a valid website (e.g., nike.com).');
-    }
-    setForm((prev) => ({ ...prev, [field]: value }));
+  const selectElement = element => {
+    setSelectedId(element.id);
+    setActiveTool(element.type === 'text' ? 'Text' : element.type === 'shape' ? 'Shapes' : element.field === 'logoPreview' ? 'Logo' : 'Images');
+    if (window.innerWidth > 900) setPanelOpen(true);
   };
-
-  const handlePhoneChange = (event) => {
-    const formatted = formatPhoneNumber(event.target.value);
-    setForm((prev) => ({ ...prev, contact: formatted }));
+  const pointerStart = (event, element, mode = 'move') => {
+    if (event.button !== 0 || editingId) return;
+    event.preventDefault(); event.stopPropagation();
+    selectElement(element);
+    event.currentTarget.focus({ preventScroll: true });
+    event.currentTarget.setPointerCapture(event.pointerId);
+    drag.current = { id: element.id, pointerId: event.pointerId, clientX: event.clientX, clientY: event.clientY, element: { ...element }, before: scene, mode, scale: boardRef.current.getBoundingClientRect().width / CARD_WIDTH };
   };
-
-  const handleFaxChange = (event) => {
-    const formatted = formatPhoneNumber(event.target.value);
-    setForm((prev) => ({ ...prev, fax: formatted }));
+  const pointerMove = event => {
+    const operation = drag.current;
+    if (!operation || operation.pointerId !== event.pointerId) return;
+    const dx = (event.clientX - operation.clientX) / operation.scale;
+    const dy = (event.clientY - operation.clientY) / operation.scale;
+    const element = operation.element;
+    let patch;
+    if (operation.mode === 'resize') {
+      const radians = (element.rotation || 0) * Math.PI / 180;
+      const localX = dx * Math.cos(radians) + dy * Math.sin(radians);
+      const localY = -dx * Math.sin(radians) + dy * Math.cos(radians);
+      patch = { w: Math.round(clamp(element.w + localX, 24, CARD_WIDTH * 2)), h: Math.round(clamp(element.h + localY, 24, CARD_HEIGHT * 2)) };
+    } else patch = { x: Math.round(clamp(element.x + dx, -element.w + 20, CARD_WIDTH - 20)), y: Math.round(clamp(element.y + dy, -element.h + 20, CARD_HEIGHT - 20)) };
+    dispatch({ type: 'edit', record: false, next: previous => ({ ...previous, elements: previous.elements.map(item => item.id === operation.id ? { ...item, ...patch } : item) }) });
   };
-
-  const handleLogoChange = (event) => {
-    const file = event.target.files && event.target.files[0];
+  const pointerEnd = event => {
+    if (!drag.current || drag.current.pointerId !== event.pointerId) return;
+    dispatch({ type: 'commit-drag', before: drag.current.before });
+    drag.current = null;
+  };
+  const addText = (text, fontSize, fontWeight = 400) => {
+    const element = { id: newId(), type: 'text', text, x: 100, y: 100, w: 600, h: fontSize * 2.5, fontSize, fontFamily: 'Arial', fontWeight, color: '#222222', align: 'left', rotation: 0, opacity: 1 };
+    edit(previous => ({ ...previous, elements: [...previous.elements, element] })); setSelectedId(element.id);
+  };
+  const addShape = shape => {
+    const element = { id: newId(), type: 'shape', shape, x: 100, y: 100, w: 180, h: 180, color: '#8da38b', opacity: 1, rotation: 0 };
+    edit(previous => ({ ...previous, elements: [...previous.elements, element] })); setSelectedId(element.id);
+  };
+  const requestUpload = kind => { uploadKind.current = kind; fileRef.current.click(); };
+  const addImage = async event => {
+    const file = event.target.files?.[0]; event.target.value = '';
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      setForm((prev) => ({ ...prev, logoPreview: reader.result || '' }));
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleSavedLogoChange = (event) => {
-    const selectedLogo = savedLogos.find((logo) => String(logo.id) === event.target.value);
-    setForm((prev) => ({ ...prev, logoPreview: selectedLogo?.logoPreview || '' }));
-  };
-
-  const handleWebsiteBlur = () => {
-    if (!isWebsite(form.website)) {
-      setWebsiteError('Please enter a valid website (e.g., nike.com).');
-    } else {
-      setWebsiteError('');
-      setForm((prev) => ({
-        ...prev,
-        website: normalizeWebsite(prev.website),
-      }));
-    }
-  };
-
-  const canSave =
-    form.name.trim() &&
-    form.contact.trim() &&
-    form.email.trim() &&
-    isEmail(form.email) &&
-    isWebsite(form.website);
-
-  const handleConfirmEdit = () => {
-    if (!hasToken()) {
-      enqueueSnackbar('Please log in to save changes.', { variant: 'warning' });
-      navigate('/Login');
-      return;
-    }
-
-    if (!isWebsite(form.website)) {
-      setWebsiteError('Please enter a valid website (e.g., nike.com).');
-      return;
-    }
-
-    if (!canSave) {
-      setError('Please fill out name, email, and phone with valid values.');
-      return;
-    }
-
-    setError('');
+    setBusy(true); setError('');
     try {
-      const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
-      const index = stored.findIndex((item) => String(item.id) === String(id));
-      if (index === -1) {
-        setError('Unable to update because this card no longer exists.');
-        return;
+      const image = await readImageFile(file);
+      const kind = uploadKind.current;
+      if (kind === 'replace' && selected?.type === 'image') updateElement({ src: image.src });
+      else if (kind === 'logo' && scene.elements.some(element => element.field === 'logoPreview')) {
+        const logo = scene.elements.find(element => element.field === 'logoPreview');
+        updateElement({ src: image.src }, logo.id); setSelectedId(logo.id);
+      } else {
+        const element = { id: newId(), type: 'image', src: image.src, x: kind === 'background' ? 0 : 90, y: kind === 'background' ? 0 : 90, w: kind === 'background' ? CARD_WIDTH : 250, h: kind === 'background' ? CARD_HEIGHT : clamp(250 * image.height / image.width, 30, 450), fit: kind === 'background' ? 'cover' : 'contain', rotation: 0, opacity: 1, ...(kind === 'logo' ? { field: 'logoPreview' } : {}) };
+        edit(previous => ({ ...previous, elements: kind === 'background' ? [element, ...previous.elements] : [...previous.elements, element] })); setSelectedId(element.id);
       }
-
-      const updatedCard = {
-        ...stored[index],
-        ...form,
-        website: normalizeWebsite(form.website),
-        updatedAt: new Date().toISOString(),
-      };
-
-      stored[index] = updatedCard;
-      localStorage.setItem(storageKey, JSON.stringify(stored));
-      setStatus('Changes saved!');
-      setTimeout(() => navigate('/get-cards'), 900);
-    } catch (err) {
-      console.error('Failed to update card', err);
-      setError('Something went wrong while saving your edits.');
-    }
+    } catch (err) { setError(err.message); }
+    finally { setBusy(false); }
   };
+  const applySavedLogo = src => {
+    const logo = scene.elements.find(element => element.field === 'logoPreview');
+    if (logo) { updateElement({ src }, logo.id); setSelectedId(logo.id); }
+    else { const element = { id: newId(), type: 'image', field: 'logoPreview', src, x: 70, y: 70, w: 150, h: 150, rotation: 0, opacity: 1 }; edit(previous => ({ ...previous, elements: [...previous.elements, element] })); setSelectedId(element.id); }
+  };
+  const reorder = direction => {
+    const elements = [...scene.elements];
+    const index = elements.findIndex(element => element.id === selectedId);
+    const destination = clamp(index + direction, 0, elements.length - 1);
+    if (index < 0 || index === destination) return;
+    [elements[index], elements[destination]] = [elements[destination], elements[index]];
+    edit({ ...scene, elements });
+  };
+  const duplicate = () => {
+    if (!selected) return;
+    const next = { ...selected, id: newId(), x: selected.x + 20, y: selected.y + 20 };
+    delete next.field;
+    edit(previous => ({ ...previous, elements: [...previous.elements, next] })); setSelectedId(next.id);
+  };
+  const exportDesign = async format => {
+    // Authentication is checked again at the action, including after modal login.
+    if (!localStorage.getItem('token')) throw new Error('Please log in to download your card.');
+    const card = persist();
+    await downloadCard(scene, format, card.businessName || card.name || 'business-card');
+    setDialog(null); setStatus(`${format.toUpperCase()} downloaded. Progress saved.`); setError('');
+  };
+  const print = () => { try { printCard(scene); } catch (err) { setError(err.message); } };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50">
-        <NavBar />
-        <div className="pt-24 max-w-3xl mx-auto px-4">
-          <div className="bg-white rounded-2xl shadow p-8 text-center text-slate-600">
-            Loading your card...
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (initial.error) return <div className="studio-page studio-not-found"><CreditCard size={35} /><h1>Let’s find your design.</h1><p>{initial.error}</p><Link to="/get-cards" className="studio-button studio-button--primary">Back to gallery<ArrowLeft size={16} /></Link></div>;
 
-  return (
-    <div className="min-h-screen bg-slate-50">
-      <NavBar />
-      <div className="pt-24 max-w-4xl mx-auto px-4 pb-12">
-        <div className="flex items-center gap-3 mb-6">
-          <BackButton />
-          <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-slate-400">
-              Edit business card
-            </p>
-            <h1 className="text-2xl font-bold text-slate-900">Update details</h1>
-          </div>
-        </div>
-
-        {error && (
-          <div className="mb-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
-        )}
-        {status && (
-          <div className="mb-4 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700">
-            {status}
-          </div>
-        )}
-
-        <div className="bg-white rounded-2xl shadow-lg p-6 space-y-6">
-          <div className="grid gap-5 md:grid-cols-2">
-            {/* LEFT */}
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-slate-600 flex items-center">
-                  Full Name <span className="text-red-500 ml-1">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={handleChange('name')}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
-                  placeholder="Jane Smith"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-slate-600">
-                  Job Title
-                </label>
-                <input
-                  type="text"
-                  value={form.occupation}
-                  onChange={handleChange('occupation')}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
-                  placeholder="Founder & CEO"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-slate-600 flex items-center">
-                  Phone <span className="text-red-500 ml-1">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={form.contact}
-                  onChange={handlePhoneChange}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
-                  placeholder="(555) 333-9212"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-slate-600">
-                  Fax
-                </label>
-                <input
-                  type="text"
-                  value={form.fax}
-                  onChange={handleFaxChange}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
-                  placeholder="(555) 333-9212"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-slate-600 flex items-center">
-                  Email <span className="text-red-500 ml-1">*</span>
-                </label>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={handleChange('email')}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
-                  placeholder="jane@email.com"
-                />
-              </div>
-
-              {/* WEBSITE */}
-              <div>
-                <label className="text-sm font-medium text-slate-600">
-                  Website (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={form.website}
-                  onChange={handleChange('website')}
-                  onBlur={handleWebsiteBlur}
-                  placeholder="nike.com"
-                  className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:ring-2 ${
-                    websiteError
-                      ? 'border-rose-400 focus:ring-rose-300'
-                      : 'border-slate-200 focus:ring-sky-400 focus:border-sky-400'
-                  }`}
-                />
-                {websiteError && (
-                  <small className="text-rose-600 mt-1 block">{websiteError}</small>
-                )}
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-slate-600">
-                  Address
-                </label>
-                <textarea
-                  rows={3}
-                  value={form.address}
-                  onChange={handleChange('address')}
-                  placeholder={`Company (optional)
-Street address
-City, ST ZIP`}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400 resize-none leading-relaxed"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-slate-600">
-                  Slogan
-                </label>
-                <input
-                  type="text"
-                  value={form.slogan}
-                  onChange={handleChange('slogan')}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400 focus:border-sky-400"
-                  placeholder="Coffee Brewery"
-                />
+  return <div className="card-editor">
+    <header className="editor-header">
+      <div className="editor-header__identity"><Link to="/get-cards" className="editor-back" onClick={event => { if (dirty && !window.confirm('Leave the editor? Use Save Progress to keep your latest changes in your saved designs.')) event.preventDefault(); }}><ArrowLeft size={18} /><span>Back</span></Link><span className="editor-header__divider" /><Link to="/" className="editor-brand"><CreditCard size={22} />Ology<span>.</span></Link></div>
+      <div className="editor-header__title"><strong>{record.businessName || record.name || 'Untitled business card'}</strong><span><i className={dirty ? 'is-unsaved' : ''} />{dirty ? 'Unsaved changes' : 'Saved in this browser'}</span></div>
+      <div className="editor-header__actions"><button className="studio-button editor-preview-button" onClick={() => {setEditingId(null);setDialog('preview');}}><Eye size={16} /><span>Preview</span></button><button className="studio-button studio-button--outline" onClick={save}><Save size={15} /><span>Save Progress</span></button><button className="studio-button studio-button--primary" onClick={() => {setEditingId(null);setDialog('download');}}><Download size={16} /><span>Download</span><ChevronDown size={12} /></button><button className="studio-button studio-button--outline editor-print-button" onClick={print}><Printer size={16} /><span>Print</span></button></div>
+    </header>
+    <div className="editor-body">
+      <nav className="editor-tool-rail" aria-label="Editor tools">{tools.map(([name, Icon]) => <button key={name} type="button" className={activeTool === name && panelOpen ? 'is-active' : ''} aria-pressed={activeTool === name && panelOpen} onClick={() => {setPanelOpen(activeTool === name ? !panelOpen : true);setActiveTool(name);setEditingId(null);}}><Icon size={21} strokeWidth={1.6} /><span>{name}</span></button>)}</nav>
+      {panelOpen && <aside className="editor-tool-panel" aria-label={`${activeTool} tools`}>
+        <div className="editor-panel-title"><div><h2>{activeTool}</h2><p>{activeTool === 'Templates' ? 'A fresh start, in your style.' : 'The details make it yours.'}</p></div><button onClick={() => setPanelOpen(false)} aria-label="Close tools panel"><X size={17} /></button></div>
+        {activeTool === 'Templates' && <div className="editor-template-list">{TEMPLATES.map(template => <button key={template.id} type="button" onClick={() => {const next = createScene(cardWithScene(record, scene), template.id);next.templateId=template.id;edit(next);setSelectedId(null);setEditingId(null);}}><CardArtwork scene={createScene(cardWithScene(record,scene), template.id)} /><span>{template.name}</span></button>)}</div>}
+        {activeTool === 'Text' && <div className="editor-text-presets"><button onClick={() => addText('Your headline', 64, 700)}><Plus size={16} /><strong>Add a heading</strong></button><button onClick={() => addText('A little more about you', 34, 400)}><Plus size={16} /><span>Add a subheading</span></button><button onClick={() => addText('Your story starts here.', 22)}><Plus size={16} /><small>Add body text</small></button><p>Double-click text on your card to edit it directly.</p></div>}
+        {activeTool === 'Background' && <div className="editor-background-tools"><label className="studio-field">Background color<input type="color" value={scene.background} onChange={event => edit({ ...scene, background: event.target.value })} /></label><div className="editor-swatches">{['#ffffff','#f3f0e9','#292a2b','#172b36','#3157e0','#e8ecdf','#edd9ca','#ece8f1','#efb64f'].map(value => <button style={{background:value}} key={value} aria-label={`Use ${value} background`} onClick={() => edit({ ...scene, background: value })} />)}</div><label className="editor-checkbox"><input type="checkbox" checked={scene.gradient} onChange={event => edit({ ...scene, gradient: event.target.checked })} />Add a subtle gradient</label>{scene.gradient && <label className="studio-field">Second color<input type="color" value={scene.backgroundEnd} onChange={event => edit({ ...scene, backgroundEnd: event.target.value })} /></label>}<button className="studio-button studio-button--outline" onClick={() => requestUpload('background')} disabled={busy}><ImagePlus size={15} />Add background image</button><p className="editor-hint">Background images are added as the bottom layer. Select and move any layer below.</p></div>}
+        {activeTool === 'Logo' && <div className="editor-image-tools"><label className="editor-upload-tile"><Upload size={24} /><strong>Your brand belongs here.</strong><span>Upload a PNG, JPG, or WebP logo</span><button className="studio-button studio-button--primary" onClick={() => requestUpload('logo')} disabled={busy}>Upload logo</button></label>{savedLogos.length > 0 && <><h3>Saved logos</h3><div className="editor-saved-logos">{savedLogos.map(logo => <button key={logo.id} onClick={() => applySavedLogo(logo.logoPreview)} aria-label={`Use ${logo.companyName || 'saved'} logo`}><img src={logo.logoPreview} alt={logo.companyName || 'Saved logo'} /></button>)}</div></>}</div>}
+        {activeTool === 'Shapes' && <div className="editor-shape-tools"><p className="editor-hint">A little structure. A lot of personality.</p><div>{['rect','circle','rounded'].map(shape => <button key={shape} onClick={() => addShape(shape)} aria-label={`Add ${shape} shape`}><span className={`shape-swatch shape-swatch--${shape}`} /></button>)}</div></div>}
+        {activeTool === 'Images' && <div className="editor-image-tools"><div className="editor-upload-tile"><ImagePlus size={27} /><strong>Bring your card to life.</strong><span>PNG, JPG, or WebP · up to 3 MB</span><button className="studio-button studio-button--primary" onClick={() => requestUpload('image')} disabled={busy}><Upload size={15} />Upload image</button></div></div>}
+        {selected && <section className="element-properties" aria-label="Selected element properties"><div className="element-properties__title"><h3>{selected.type === 'text' ? 'Text properties' : selected.type === 'image' ? 'Image properties' : 'Shape properties'}</h3><button onClick={() => setSelectedId(null)} aria-label="Deselect element"><X size={14} /></button></div>
+          {selected.type === 'text' && <><label className="studio-field">Text<textarea value={selected.text} onChange={event => updateElement({ text: event.target.value })} rows={3} /></label><label className="studio-field">Font family<select value={selected.fontFamily} onChange={event => updateElement({ fontFamily: event.target.value })}>{FONTS.map(font => <option key={font}>{font}</option>)}</select></label><div className="editor-property-grid"><label className="studio-field">Font size<input type="number" min={8} max={220} value={selected.fontSize} onChange={event => updateElement({ fontSize: clamp(Number(event.target.value),8,220) })} /></label><label className="studio-field">Weight<select value={selected.fontWeight} onChange={event => updateElement({ fontWeight: Number(event.target.value) })}><option value={400}>Regular</option><option value={700}>Bold</option></select></label></div><label className="studio-field">Alignment<select value={selected.align} onChange={event => updateElement({ align: event.target.value })}><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></label></>}
+          {selected.type !== 'image' && <label className="studio-field">{selected.type === 'text' ? 'Text color' : 'Fill color'}<input type="color" value={selected.color} onChange={event => updateElement({ color: event.target.value })} /></label>}
+          {selected.type === 'image' && <><button className="studio-button studio-button--outline" onClick={() => requestUpload('replace')} disabled={busy}><Upload size={14} />Replace image</button><label className="studio-field">Image fit<select value={selected.fit || 'contain'} onChange={event => updateElement({fit:event.target.value})}><option value="contain">Fit inside</option><option value="cover">Fill & crop</option></select></label></>}
+          <div className="editor-property-grid">{[['x','X position',-1050,1050],['y','Y position',-600,600],['w','Width',24,2100],['h','Height',2,1200]].map(([key,label,min,max]) => <label className="studio-field" key={key}>{label}<input type="number" min={min} max={max} value={Math.round(selected[key])} onChange={event => updateElement({ [key]: clamp(Number(event.target.value),min,max) })} /></label>)}</div>
+          <label className="studio-field editor-range">Rotation <span>{selected.rotation || 0}°</span><input type="range" min={-180} max={180} value={selected.rotation || 0} onChange={event => updateElement({ rotation: Number(event.target.value) })} /></label>
+          <label className="studio-field editor-range">Opacity <span>{Math.round((selected.opacity ?? 1)*100)}%</span><input type="range" min={0} max={100} value={(selected.opacity ?? 1)*100} onChange={event => updateElement({ opacity: Number(event.target.value)/100 })} /></label>
+          <div className="editor-element-actions"><button onClick={() => reorder(-1)} title="Send backward" aria-label="Send backward"><ArrowDown size={15} /></button><button onClick={() => reorder(1)} title="Bring forward" aria-label="Bring forward"><ArrowUp size={15} /></button><button onClick={duplicate} title="Duplicate element" aria-label="Duplicate element"><Copy size={15} /></button><button onClick={removeSelected} title="Delete element" aria-label="Delete element"><Trash2 size={15} /></button></div>
+        </section>}
+        <section className="editor-layers"><h3>Layers<span>{scene.elements.length}</span></h3>{[...scene.elements].reverse().map(element => <button key={element.id} className={selectedId === element.id ? 'is-selected' : ''} onClick={() => {selectElement(element);setEditingId(null);}}><span>{element.type === 'text' ? <Type size={13} /> : element.type === 'image' ? <ImagePlus size={13} /> : <Shapes size={13} />}</span><span>{element.type === 'text' ? element.text || 'Empty text' : element.field === 'logoPreview' ? 'Your logo' : element.type === 'image' ? 'Image' : element.id.startsWith('brand') ? 'Brand accent' : 'Shape'}</span></button>)}</section>
+      </aside>}
+      <main className="editor-workspace">
+        <div className="editor-workspace__toolbar"><div><span className="editor-document-type">Business card</span><span className="editor-workspace__separator">/</span><span>Make it yours.</span></div><div className="editor-history"><button onClick={() => { dispatch({type:'undo'});setEditingId(null); }} disabled={!history.past.length} aria-label="Undo" title="Undo (Ctrl+Z)"><Undo2 size={17} /></button><button onClick={() => { dispatch({type:'redo'});setEditingId(null); }} disabled={!history.future.length} aria-label="Redo" title="Redo (Ctrl+Shift+Z)"><Redo2 size={17} /></button></div></div>
+        <div className="editor-canvas-area" onClick={event => { if (event.target === event.currentTarget) {setSelectedId(null);setEditingId(null);} }}>
+          <div className="editor-board-space"><div className="editor-board-wrap" style={{width:800 * zoom/100, maxWidth:zoom <= 100 ? '100%' : 'none'}}>
+            <div className="editor-board-label"><span>FRONT OF CARD</span><span>3.5 × 2 in</span></div>
+            <div className="editor-board" ref={boardRef} onClick={event => { if(event.target === event.currentTarget) setSelectedId(null); }}>
+              <CardArtwork scene={editingId ? {...scene,elements:scene.elements.filter(element => element.id !== editingId)} : scene} />
+              <div className="editor-hit-layer" onPointerDown={event => {if(event.target === event.currentTarget){setSelectedId(null);setEditingId(null);}}}>
+                {scene.elements.map(element => <div key={element.id} role="button" tabIndex={0} aria-label={`Edit ${element.type}: ${element.type === 'text' ? element.text : element.field || element.shape || 'image'}`} className={`editor-element${selectedId === element.id ? ' is-selected' : ''}${editingId === element.id ? ' is-editing' : ''}`} style={{left:`${element.x/CARD_WIDTH*100}%`,top:`${element.y/CARD_HEIGHT*100}%`,width:`${element.w/CARD_WIDTH*100}%`,height:`${element.h/CARD_HEIGHT*100}%`,transform:`rotate(${element.rotation || 0}deg)`}}
+                  onPointerDown={event => pointerStart(event,element)} onPointerMove={pointerMove} onPointerUp={pointerEnd} onPointerCancel={pointerEnd}
+                  onDoubleClick={event => {event.stopPropagation();selectElement(element);if(element.type==='text')setEditingId(element.id);else if(element.type==='image'){uploadKind.current='replace';fileRef.current.click();}}}
+                  onKeyDown={event => {if(event.key==='Enter'){selectElement(element);if(element.type==='text')setEditingId(element.id);else setPanelOpen(true);}}}>
+                  {selectedId === element.id && editingId !== element.id && <><span className="editor-selection-label">{element.type === 'text' ? 'Text' : element.type === 'image' ? 'Image' : 'Shape'}</span><span className="editor-resize-handle" role="button" tabIndex={0} aria-label="Resize element; use width and height fields for precise sizing" onPointerDown={event => pointerStart(event,element,'resize')} onPointerMove={pointerMove} onPointerUp={pointerEnd} onPointerCancel={pointerEnd} onKeyDown={event => {if(event.key==='Enter')setPanelOpen(true);}} /></>}
+                </div>)}
+                {editing && <textarea className="editor-inline-text" autoFocus value={editing.text} aria-label="Edit card text" style={{left:`${editing.x/CARD_WIDTH*100}%`,top:`${editing.y/CARD_HEIGHT*100}%`,width:`${editing.w/CARD_WIDTH*100}%`,height:`${editing.h/CARD_HEIGHT*100}%`,fontSize:editing.fontSize*scale,fontFamily:editing.fontFamily,fontWeight:editing.fontWeight,color:editing.color,textAlign:editing.align,transform:`rotate(${editing.rotation || 0}deg)`}} onChange={event => updateElement({text:event.target.value},editing.id)} onBlur={() => setEditingId(null)} onKeyDown={event => {event.stopPropagation();if(event.key==='Escape'||((event.ctrlKey||event.metaKey)&&event.key==='Enter'))setEditingId(null);}} />}
               </div>
             </div>
-
-            {/* RIGHT */}
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-slate-600">
-                  Logo
-                </label>
-                {form.logoPreview ? (
-                  <div className="mt-2 flex items-center gap-3">
-                    <img
-                      src={form.logoPreview}
-                      alt="Logo preview"
-                      className="h-16 w-16 rounded-2xl object-cover border border-slate-200"
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setForm((prev) => ({ ...prev, logoPreview: '' }))
-                      }
-                      className="text-sm text-rose-600 hover:underline"
-                    >
-                      Remove logo
-                    </button>
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-500 mt-1">
-                    Upload a square logo for best results.
-                  </p>
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleLogoChange}
-                  className="mt-3 block w-full text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-slate-700 hover:file:bg-slate-200"
-                />
-                {savedLogos.length > 0 && (
-                  <select
-                    defaultValue=""
-                    onChange={handleSavedLogoChange}
-                    className="mt-2 block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400"
-                  >
-                    <option value="">Or choose a saved logo</option>
-                    {savedLogos.map((logo) => (
-                      <option key={logo.id} value={logo.id}>{logo.companyName}</option>
-                    ))}
-                  </select>
-                )}
-              </div>
-
-              <div>
-                <p className="text-sm font-medium text-slate-600 mb-2">
-                  Card design
-                </p>
-                <Swiper
-                  spaceBetween={12}
-                  slidesPerView={1.1}
-                  breakpoints={{
-                    640: { slidesPerView: 2 },
-                    960: { slidesPerView: 3 },
-                  }}
-                >
-                  {Object.entries(CARD_THEMES).map(([key, item]) => {
-                    const isActive = form.design === key;
-                    return (
-                      <SwiperSlide key={key}>
-                        <button
-                          type="button"
-                          onClick={() => setForm((prev) => ({ ...prev, design: key }))}
-                          className="w-full text-left group"
-                        >
-                          <div
-                            className={`relative h-28 rounded-2xl overflow-hidden transition ring-1 ring-black/5 shadow-md ${item.base} ${
-                              isActive ? 'ring-2 ring-sky-400 scale-[1.01] shadow-lg' : ''
-                            }`}
-                          >
-                            <div className="absolute inset-0 overflow-hidden">
-                              {(item.accentElements || []).map((cls, idx) => (
-                                <span key={idx} className={`absolute ${cls}`} />
-                              ))}
-                            </div>
-                            <div className="relative h-full flex flex-col justify-between p-3">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[11px] uppercase tracking-wide font-semibold">
-                                  {item.labelText}
-                                </span>
-                              </div>
-                              <div>
-                                <p className="text-sm font-semibold">Your Name</p>
-                                <p className={`text-[11px] ${item.sub || 'text-white/80'}`}>
-                                  Role / Title
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                          <span
-                            className={`mt-2 block text-center text-sm font-semibold transition ${
-                              isActive ? 'text-sky-600' : 'text-slate-600 group-hover:text-slate-800'
-                            }`}
-                          >
-                            {item.labelText}
-                          </span>
-                        </button>
-                      </SwiperSlide>
-                    );
-                  })}
-                </Swiper>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-3 sm:justify-end">
-            <button
-              type="button"
-              onClick={() => navigate('/get-cards')}
-              className="px-5 py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleConfirmEdit}
-              disabled={!canSave}
-              className={`px-6 py-3 rounded-xl text-sm font-semibold text-white transition ${
-                canSave
-                  ? 'bg-emerald-600 hover:bg-emerald-700'
-                  : 'bg-slate-300 cursor-not-allowed'
-              }`}
-            >
-              Confirm edit
-            </button>
-          </div>
+            <div className="editor-board-hint"><MousePointer2 size={13} /><span>Click to select · Double-click text to edit · Drag to move</span></div>
+          </div></div>
         </div>
-      </div>
+        {(error || status) && <div className={`editor-notice${error ? ' is-error' : ''}`} role={error ? 'alert' : 'status'}>{!error && <Check size={15} />}{error || status}<button onClick={() => {setError('');setStatus('');}} aria-label="Dismiss message"><X size={14} /></button></div>}
+        <footer className="editor-workspace__footer"><span><span className="editor-status-dot" />{busy ? 'Reading image…' : 'Your canvas. Your rules.'}</span><div className="editor-zoom"><button onClick={() => setZoom(value => Math.max(40,value-10))} aria-label="Zoom out" disabled={zoom <= 40}><ZoomOut size={15} /></button><input type="range" aria-label="Canvas zoom" min={40} max={150} step={10} value={zoom} onChange={event => setZoom(Number(event.target.value))} /><button onClick={() => setZoom(value => Math.min(150,value+10))} aria-label="Zoom in" disabled={zoom >= 150}><ZoomIn size={15} /></button><button onClick={() => setZoom(100)} title="Reset zoom">{zoom}%</button></div></footer>
+      </main>
     </div>
-  );
+    <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="studio-hidden-input" onChange={addImage} tabIndex={-1} aria-label="Upload a card image" />
+    {dialog === 'preview' && <StudioDialog title="Business card preview" onClose={() => setDialog(null)} className="studio-dialog--preview"><p className="studio-eyebrow">YOUR NEXT FIRST IMPRESSION</p><h2>Looking good. Looking like you.</h2><div className="editor-preview-art"><CardArtwork scene={scene} /></div><p className="studio-description">Front · 3.5 × 2 in · Exports at 1050 × 600 px</p><button className="studio-button studio-button--primary" onClick={() => setDialog('download')}><Download size={16} />Download your card</button></StudioDialog>}
+    {dialog === 'download' && <DownloadDialog onClose={() => setDialog(null)} onDownload={exportDesign} />}
+  </div>;
 };
-
+CardEditor.propTypes = { id: PropTypes.string.isRequired };
+const EditCard = () => { const { id } = useParams(); return <CardEditor key={id} id={id} />; };
 export default EditCard;

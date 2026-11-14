@@ -1,489 +1,65 @@
-﻿import React, { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, ArrowRight, Heart, Plus, Search, SlidersHorizontal, Sparkles, Trash2, Printer } from 'lucide-react';
 import NavBar from '../components/NavBar';
-import BackButton from '../components/BackButton';
-import { Link, useNavigate } from 'react-router-dom';
-import { CARD_THEMES, getCardTheme } from '../utils/cardThemes';
-import { Globe, Mail, MapPin, Phone, Printer } from 'lucide-react';
-import { useMemo } from 'react';
-import { getUserScopedKey, hasToken } from '../utils/auth';
-import { useSnackbar } from 'notistack';
-
-// Website normalizer (for older cards that may not have https)
-const normalizeWebsite = (value = '') => {
-  const v = String(value || '').trim();
-  if (!v) return '';
-  return /^https?:\/\//i.test(v) ? v : `https://${v}`;
-};
-
-// helper to build the print window for a saved card
-const openPrintWindowForCard = (card) => {
-  if (!card) return;
-  const {
-    name,
-    address,
-    email,
-    occupation,
-    contact,
-    fax,
-    slogan,
-    logoPreview,
-    design = 'classic',
-    website,
-  } = card;
-
-  const theme = getCardTheme(design);
-  const styles =
-    theme.print || {
-      background: 'linear-gradient(135deg, #0369a1, #0c4a6e)',
-      text: '#ffffff',
-      subText: 'rgba(255,255,255,0.8)',
-      border: 'none',
-    };
-  const safe = (v) => String(v || '');
-
-  const html = `<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Business Card</title>
-    <style>
-      @page { size: 3.5in 2in; margin: 0; }
-      * { box-sizing: border-box; }
-      html, body { margin: 0; padding: 0; }
-      .page { width: 3.5in; height: 2in; display: flex; align-items: center; ${
-        styles.border ? `border:${styles.border};` : ''
-      } border-radius: 12px; background: ${styles.background}; color: ${
-        styles.text
-      }; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
-      .wrap { display:flex; gap: 12px; padding: 12px 16px; width: 100%; align-items: center; }
-      .logo { width: 56px; height: 56px; border-radius: 8px; ${
-        design === 'minimal' ? 'background:#f3f4f6;' : 'background: rgba(255,255,255,0.1);'
-      } display:flex; align-items:center; justify-content:center; overflow:hidden; }
-      .logo img { width: 100%; height: 100%; object-fit: cover; }
-      .slogan { margin-top: 6px; font-size: 10px; font-style: italic; text-align:center; color: ${
-        styles.subText
-      }; max-width: 70px; }
-      .name { font-weight: 800; font-size: 18px; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      .title { font-size: 12px; color: ${styles.subText}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      .info { margin-top: 6px; font-size: 11px; }
-      .label { color: ${styles.subText}; margin-right: 6px; }
-      .row { display:flex; align-items:center; }
-      .addr { display:flex; white-space: pre-line; }
-      @media print { .actions { display: none; } }
-    </style>
-  </head>
-  <body>
-    <div class="page">
-      <div class="wrap">
-        <div style="display:flex; flex-direction:column; align-items:center;">
-          <div class="logo">${
-            logoPreview
-              ? `<img src="${logoPreview}" alt="Logo" />`
-              : `<div style="font-size:10px;opacity:.7;${design==='minimal'?'color:#6b7280':''}">No Logo</div>`
-          }</div>
-          ${slogan ? `<div class="slogan">â€œ${safe(slogan)}â€</div>` : ''}
-        </div>
-        <div style="flex:1; min-width:0;">
-          <div class="name">${safe(name) || 'Your Name'}</div>
-          <div class="title">${safe(occupation) || 'Your Title'}</div>
-          <div class="info">
-            <div class="row"><span class="label">Email:</span><span>${safe(email)}</span></div>
-            ${
-              website
-                ? `<div class="row"><span class="label">Website:</span><span>${safe(website)}</span></div>`
-                : ''
-            }
-            <div class="row"><span class="label">Phone:</span><span>${safe(contact)}</span></div>
-            ${
-              fax
-                ? `<div class="row"><span class="label">Fax:</span><span>${safe(fax)}</span></div>`
-                : ''
-            }
-            ${
-              address
-                ? `<div class="addr"><span class="label">Address:</span><span>${safe(address)}</span></div>`
-                : ''
-            }
-          </div>
-        </div>
-      </div>
-    </div>
-    <script>window.onload = () => { window.print(); setTimeout(() => window.close(), 300); };</script>
-  </body>
-</html>`;
-
-  const w = window.open('', '_blank');
-  if (w) {
-    w.document.open();
-    w.document.write(html);
-    w.document.close();
-  }
-};
-
-const formatAddress = (address = '') => {
-  const raw = String(address).trim();
-  if (!raw) return { line1: '', line2: '' };
-
-  const parts = raw
-    .split(',')
-    .map((p) => p.trim())
-    .filter(Boolean);
-
-  const isState = (s) => /^[A-Z]{2}$/i.test(s);
-  const isZip = (s) => /^\d{5}(-\d{4})?$/.test(s);
-
-  const splitStreetCity = (str) => {
-    const s = str.trim();
-    const match = s.match(
-      /(.*\b(?:ave|avenue|st|street|rd|road|blvd|boulevard|ln|lane|dr|drive|ct|court|pl|place|pkwy|parkway|way)\b)\s+(.*)/i
-    );
-    if (match) return [match[1].trim(), match[2].trim()];
-    return [s, ''];
-  };
-
-  if (parts.length >= 3) {
-    const zip = parts[parts.length - 1];
-    const state = parts[parts.length - 2];
-    const left = parts.slice(0, -2).join(', ');
-    if (isState(state) && isZip(zip)) {
-      const [line1, city] = splitStreetCity(left);
-      return {
-        line1,
-        line2: city
-          ? `${city}, ${state.toUpperCase()} ${zip}`
-          : `${state.toUpperCase()} ${zip}`,
-      };
-    }
-  }
-
-  if (parts.length >= 2) {
-    const line1 = parts[0];
-    const rest = parts.slice(1).join(', ');
-    const restTokens = rest.split(/\s+/).filter(Boolean);
-    if (restTokens.length >= 3) {
-      const zip = restTokens[restTokens.length - 1];
-      const state = restTokens[restTokens.length - 2];
-      const city = restTokens.slice(0, -2).join(' ');
-      if (isState(state) && isZip(zip)) {
-        return {
-          line1,
-          line2: `${city}, ${state.toUpperCase()} ${zip}`.trim(),
-        };
-      }
-    }
-    return { line1, line2: rest };
-  }
-
-  return { line1: raw, line2: '' };
-};
-
-const getAddressLines = (address = '') => {
-  const raw = String(address).trim();
-  if (!raw) return [];
-
-  const multi = raw
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean);
-
-  if (multi.length > 1) return multi.slice(0, 3);
-
-  const { line1, line2 } = formatAddress(raw);
-  return [line1, line2].filter(Boolean);
-};
+import CardArtwork from '../components/studio/CardArtwork';
+import { TEMPLATES, createScene, loadCards, newId, readList, saveCard, sceneFor, studioKey, templateFor } from '../utils/cardStudio';
+import './CardStudio.css';
 
 const GetCards = () => {
-  const [cards, setCards] = useState([]);
-  const [query, setQuery] = useState('');
   const navigate = useNavigate();
-  const { enqueueSnackbar } = useSnackbar();
-  const storageKey = useMemo(() => getUserScopedKey('generatedCards'), []);
-  const [authRequired, setAuthRequired] = useState(false);
-
-  useEffect(() => {
-    if (!hasToken()) {
-      setAuthRequired(true);
-      setCards([]);
-      return;
-    }
-
-    try {
-      const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
-      setCards(stored);
-      setAuthRequired(false);
-    } catch (err) {
-      console.error('Failed to load cards', err);
-    }
-  }, [storageKey]);
-
-  const filteredCards = cards.filter((card) => {
-    if (!query.trim()) return true;
-    const q = query.toLowerCase();
-    return (
-      (card.name && card.name.toLowerCase().includes(q)) ||
-      (card.occupation && card.occupation.toLowerCase().includes(q)) ||
-      (card.slogan && card.slogan.toLowerCase().includes(q)) ||
-      (card.email && card.email.toLowerCase().includes(q)) ||
-      (card.website && card.website.toLowerCase().includes(q)) ||
-      (card.fax && String(card.fax).toLowerCase().includes(q))
-    );
-  });
-
-  const handleDeleteCard = (cardId) => {
-    if (!hasToken()) {
-      enqueueSnackbar('Please log in to delete a card.', { variant: 'warning' });
-      navigate('/Login');
-      return;
-    }
-
-    const confirmDelete = window.confirm('Delete this card?');
-    if (!confirmDelete) return;
-    try {
-      setCards((prev) => {
-        const updated = prev.filter((card) => card.id !== cardId);
-        localStorage.setItem(storageKey, JSON.stringify(updated));
-        return updated;
-      });
-    } catch (err) {
-      console.error('Failed to delete card', err);
-    }
+  const [searchParams] = useSearchParams();
+  const [error, setError] = useState('');
+  const [cards, setCards] = useState(() => { try { return loadCards(); } catch { return []; } });
+  const [favorites, setFavorites] = useState(() => { try { return readList(studioKey('cardFavorites')); } catch { return []; } });
+  const [tab, setTab] = useState(searchParams.has('generated') || cards.length === 0 ? 'Templates' : 'My designs');
+  const [category, setCategory] = useState('All styles');
+  const [query, setQuery] = useState('');
+  const seed = cards.find(card => String(card.id) === searchParams.get('generated')) || cards[0] || {};
+  const templateItems = TEMPLATES.filter(template => (category === 'All styles' || template.category === category) && `${template.name} ${template.category}`.toLowerCase().includes(query.toLowerCase()) && (tab !== 'Favorites' || favorites.includes(template.id)));
+  const savedItems = cards.filter(card => `${card.name || ''} ${card.email || ''} ${card.businessName || ''} ${card.occupation || ''}`.toLowerCase().includes(query.toLowerCase()));
+  const favorite = id => {
+    const next = favorites.includes(id) ? favorites.filter(value => value !== id) : [...favorites, id];
+    try { localStorage.setItem(studioKey('cardFavorites'), JSON.stringify(next)); setFavorites(next); }
+    catch { setError('Your favorites could not be saved. Please check browser storage.'); }
   };
-
-  const handleCardClick = (cardId) => {
-    if (!hasToken()) {
-      enqueueSnackbar('Please log in to edit a card.', { variant: 'warning' });
-      navigate('/Login');
-      return;
-    }
-
-    if (!cardId) return;
-    navigate(`/edit-card/${cardId}`);
-  };
-
-  const handleCheckout = (card) => {
-    if (!hasToken()) {
-      enqueueSnackbar('Please log in to print or download a card.', { variant: 'warning' });
-      navigate('/Login');
-      return;
-    }
-
+  const choose = template => {
     try {
-      localStorage.setItem('checkoutCard', JSON.stringify(card));
-    } catch (err) {
-      console.error('Failed to save checkout card', err);
-    }
-    navigate('/checkout');
+      const card = { ...seed, id: newId(), design: template.id, editorScene: createScene(seed, template.id), createdAt: new Date().toISOString() };
+      saveCard(card);
+      navigate(`/edit-card/${card.id}`);
+    } catch { setError('This design could not be opened. Free some browser storage and try again.'); }
   };
-
-  return (
-    <div className="min-h-screen bg-slate-100">
-      <NavBar />
-      <div className="pt-24 max-w-6xl mx-auto px-4 pb-10">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-slate-900">My Cards</h1>
-          </div>
-          <Link
-            to="/generate-card"
-            className="px-4 py-2 rounded-lg bg-sky-600 text-white text-sm font-semibold hover:bg-sky-700"
-          >
-            Create New Card
-          </Link>
-        </div>
-
-        {authRequired ? (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 text-center text-slate-700">
-            <p className="text-lg font-semibold">Please log in to view your cards.</p>
-            <button
-              onClick={() => navigate('/Login')}
-              className="mt-4 px-4 py-2 rounded-lg bg-sky-600 text-white text-sm font-semibold hover:bg-sky-700"
-            >
-              Go to Login
-            </button>
-          </div>
-        ) : (
-          <>
-            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search by name, email, slogan..."
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-sky-400 focus:outline-none bg-white"
-                />
-              </div>
-              <div className="text-sm text-gray-500">
-                {cards.length} saved card{cards.length === 1 ? '' : 's'}
-              </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-              {filteredCards.map((card) => {
-                const theme = getCardTheme(card.design);
-                const name = card.name || 'Full Name';
-                const title = card.occupation || 'Founder & CEO';
-                const email = card.email || 'john@email.com';
-                const phone = card.contact || '(555) 333-9212';
-                const fax = (card.fax ?? '').toString().trim();
-                const website = (card.website ?? '').toString().trim();
-                const slogan = (card.slogan || '').trim();
-                const hasSlogan = Boolean(slogan);
-                const hasLogo = Boolean(card.logoPreview);
-                const hasFax = fax && fax.replace(/[\s()-]/g, '').length > 0;
-                const hasWebsite = website.length > 0;
-                const isMinimal = card.design === 'minimal';
-                const forceDarkText = theme.forceDarkText;
-                const useDarkText = isMinimal || forceDarkText;
-                const textColor = useDarkText ? 'text-gray-800' : 'text-white';
-                const iconColor = useDarkText ? theme.sub || 'text-gray-600' : theme.sub || 'text-white/80';
-
-                return (
-                  <div
-                    key={card.id}
-                    className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col"
-                  >
-                    <div className="p-4">
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => handleCardClick(card.id)}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter') handleCardClick(card.id);
-                        }}
-                        className={`relative overflow-hidden rounded-xl shadow-xl ${theme.base} px-5 py-4 h-[240px] cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500`}
-                      >
-                        <div className="flex h-full gap-3">
-                          <div className="flex-1 flex flex-col">
-                            <div className="min-w-0">
-                              <p className="text-xl font-bold truncate">{name}</p>
-                              <p className={`text-sm truncate ${theme.sub || 'text-white/80'}`}>
-                                {title}
-                              </p>
-                            </div>
-
-                            <div className="mt-8 space-y-1 text-[12px] leading-tight flex-1 min-h-0">
-                              <div className="flex items-center gap-2 min-w-0">
-                                <Phone className={`h-4 w-4 shrink-0 ${iconColor}`} aria-hidden="true" />
-                                <span className={`truncate ${textColor}`}>{phone}</span>
-                              </div>
-
-                              {hasFax && (
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <Printer className={`h-4 w-4 shrink-0 ${iconColor}`} aria-hidden="true" />
-                                  <span className={`truncate ${textColor}`}>{fax}</span>
-                                </div>
-                              )}
-
-                              <div className="flex items-center gap-2 min-w-0">
-                                <Mail className={`h-4 w-4 shrink-0 ${iconColor}`} aria-hidden="true" />
-                                <span className={`truncate ${textColor}`}>{email}</span>
-                              </div>
-
-                              {hasWebsite && (
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <Globe className={`h-4 w-4 shrink-0 ${iconColor}`} aria-hidden="true" />
-                                  <a
-                                    href={normalizeWebsite(website)}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className={`truncate underline ${textColor}`}
-                                    title={website}
-                                  >
-                                    {website.replace(/^https?:\/\//i, '')}
-                                  </a>
-                                </div>
-                              )}
-
-                              {card.address && (() => {
-                                const lines = getAddressLines(card.address);
-
-                                return (
-                                  <div className="flex items-start gap-2 min-w-0">
-                                    <MapPin className={`h-4 w-4 shrink-0 mt-[1px] ${iconColor}`} aria-hidden="true" />
-                                    <span className={`min-w-0 ${textColor}`}>
-                                      {lines.map((ln, i) => (
-                                        <span
-                                          key={i}
-                                          className="block leading-snug line-clamp-1"
-                                          title={ln}
-                                        >
-                                          {ln}
-                                        </span>
-                                      ))}
-                                    </span>
-                                  </div>
-                                );
-                              })()}
-                            </div>
-                          </div>
-
-                          {(hasLogo || hasSlogan) && (
-                            <div className="flex flex-col items-center justify-center gap-2 w-24 shrink-0 text-center">
-                              {hasLogo && (
-                                <div
-                                  className={`w-16 h-16 rounded-md overflow-hidden flex items-center justify-center ${
-                                    theme.logoBg || ''
-                                  }`}
-                                >
-                                  <img
-                                    src={card.logoPreview}
-                                    alt="Logo"
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                              )}
-                              {hasSlogan && (
-                                <p
-                                  className={`text-[10px] italic truncate max-w-[96px] ${
-                                    theme.sub || 'text-white/80'
-                                  }`}
-                                  title={slogan}
-                                >
-                                  "{slogan}"
-                                </p>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="px-4 pb-4 flex gap-2 mt-auto">
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteCard(card.id)}
-                        className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100"
-                      >
-                        Delete
-                      </button>
-                      <button
-                        onClick={() => handleCheckout(card)}
-                        className="flex-1 py-2 text-xs font-semibold rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition"
-                      >
-                        Print / Download
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {filteredCards.length === 0 && (
-              <div className="text-center text-gray-500 mt-8">
-                <p>No cards yet.</p>
-                <p className="text-sm mt-1">
-                  Generate a card first, then it will appear alongside the templates above.
-                </p>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
+  const remove = id => {
+    if (!window.confirm('Delete this saved design?')) return;
+    try { const next = cards.filter(card => card.id !== id); localStorage.setItem(studioKey(), JSON.stringify(next)); setCards(next); }
+    catch { setError('The design could not be deleted. Please try again.'); }
+  };
+  const checkout = card => {
+    try { localStorage.setItem('checkoutCard', JSON.stringify(card)); navigate('/checkout'); }
+    catch { setError('The print order could not be opened. Please check browser storage.'); }
+  };
+  return <div className="studio-page">
+    <NavBar />
+    <main className="gallery-shell">
+      <div className="gallery-breadcrumb"><Link className="studio-back" to="/generate-card"><ArrowLeft size={15} />Your details</Link><span>YOUR BRAND, BEAUTIFULLY CONNECTED</span></div>
+      <div className="gallery-heading"><div><p className="studio-eyebrow"><Sparkles size={14} />DESIGNED AROUND YOU</p><h1>Meet your next business card<span>.</span></h1><p className="studio-description">Find your kind of first impression. Pick a design and make it your own.</p></div><Link to="/generate-card" className="studio-button studio-button--outline"><Plus size={16} />New card</Link></div>
+      <div className="gallery-toolbar"><div className="gallery-tabs" role="tablist" aria-label="Card collections">{['Templates', 'My designs', 'Favorites'].map(item => <button key={item} type="button" role="tab" aria-selected={tab === item} aria-controls="gallery-results" id={`tab-${item.replace(' ', '-')}`} onClick={() => setTab(item)}>{item}{item === 'My designs' && <span>{cards.length}</span>}{item === 'Favorites' && <Heart size={13} />}</button>)}</div><div className="gallery-filters"><label className="gallery-search"><Search size={15} /><input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search designs…" aria-label="Search designs" /></label>{tab !== 'My designs' && <label className="gallery-style"><SlidersHorizontal size={14} /><select value={category} onChange={event => setCategory(event.target.value)} aria-label="Filter by style">{['All styles','Minimal','Elegant','Creative','Bold'].map(style => <option key={style}>{style}</option>)}</select></label>}</div></div>
+      {error && <p className="studio-error" role="alert">{error}</p>}
+      <div className="gallery-count"><span>{tab === 'My designs' ? savedItems.length : templateItems.length} {tab === 'My designs' ? 'saved designs' : 'curated designs'}<span className="gallery-count__dot">·</span>Made to be yours</span><span>3.5 × 2 in</span></div>
+      <section className="gallery-grid" id="gallery-results" role="tabpanel" aria-labelledby={`tab-${tab.replace(' ', '-')}`}>
+        {tab === 'My designs' ? savedItems.map(card => <article className="template-tile" key={card.id}>
+          <button type="button" className="template-tile__preview" onClick={() => navigate(`/edit-card/${card.id}`)} aria-label={`Edit ${card.businessName || card.name || 'untitled'} card`}><CardArtwork scene={sceneFor(card)} /><span className="template-tile__edit">Continue editing<ArrowRight size={15} /></span></button>
+          <div className="template-tile__caption"><div><h2>{card.businessName || card.name || 'Untitled card'}</h2><p>{templateFor(card.design).name}</p></div><div className="template-tile__actions"><button onClick={() => checkout(card)} aria-label="Order printed cards" title="Order printed cards"><Printer size={16} /></button><button onClick={() => remove(card.id)} aria-label="Delete design" title="Delete design"><Trash2 size={16} /></button></div></div>
+        </article>) : templateItems.map((template, index) => <article className={`template-tile template-tile--${template.id}`} key={template.id}>
+          <div className="template-tile__stage"><button className="template-tile__preview" type="button" onClick={() => choose(template)} aria-label={`Customize ${template.name}`}><CardArtwork scene={createScene(seed, template.id)} /><span className="template-tile__edit">Make it yours<ArrowRight size={15} /></span></button><button className={`template-favorite${favorites.includes(template.id) ? ' is-favorite' : ''}`} type="button" aria-label={`${favorites.includes(template.id) ? 'Unfavorite' : 'Favorite'} ${template.name}`} aria-pressed={favorites.includes(template.id)} onClick={() => favorite(template.id)}><Heart size={17} fill={favorites.includes(template.id) ? 'currentColor' : 'none'} /></button>{index === 0 && tab === 'Templates' && <span className="template-badge">A GOOD PLACE TO START</span>}</div>
+          <div className="template-tile__caption"><div><h2>{template.name}</h2><p>{template.category} · Fully customizable</p></div><button className="template-select" type="button" onClick={() => choose(template)} aria-label={`Open ${template.name}`}><ArrowRight size={17} /></button></div>
+        </article>)}
+      </section>
+      {(tab === 'My designs' ? savedItems.length === 0 : templateItems.length === 0) && <div className="studio-empty"><Heart size={25} /><h2>{tab === 'Favorites' ? 'Keep your favorites close.' : 'Nothing here just yet.'}</h2><p>{tab === 'Favorites' ? 'Tap the heart on a template to save it here.' : 'Try a different search or start a new design.'}</p><button className="studio-button studio-button--outline" onClick={() => {setTab('Templates');setQuery('');setCategory('All styles');}}>Explore templates<ArrowRight size={15} /></button></div>}
+      <footer className="gallery-footer"><span>Thoughtful designs. Meaningful connections.</span><span>Click any card to start creating<ArrowUpRightIcon /></span></footer>
+    </main>
+  </div>;
 };
-
+const ArrowUpRightIcon = () => <span aria-hidden="true">↗</span>;
 export default GetCards;
-
