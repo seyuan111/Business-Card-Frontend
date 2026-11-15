@@ -7,13 +7,13 @@ import HowItWorks from '../components/HowItWorks';
 import CreateLogo from '../components/CreateLogo';
 import Reviews from '../components/Reviews';
 import Footer from '../components/Footer';
-import { CARD_DRAFT_KEY, readCardDraft } from '../utils/cardDraft';
+import { CARD_DRAFT_KEY } from '../utils/cardDraft';
+import { newId } from '../utils/cardStudio';
 import './Hero.css';
 
 const Hero = () => {
-  const [draft] = useState(readCardDraft);
-  const [businessName, setBusinessName] = useState(draft.businessName);
-  const [logoPreview, setLogoPreview] = useState(draft.logoPreview);
+  const [businessName, setBusinessName] = useState('');
+  const [logoPreview, setLogoPreview] = useState('');
   const [uploadError, setUploadError] = useState('');
   const [uploading, setUploading] = useState(false);
   const navigate = useNavigate();
@@ -22,8 +22,9 @@ const Hero = () => {
   const handleStart = (event) => {
     event.preventDefault();
     try {
-      sessionStorage.setItem(CARD_DRAFT_KEY, JSON.stringify({ businessName: businessName.trim(), logoPreview }));
-      navigate('/generate-card');
+      const id = newId();
+      sessionStorage.setItem(CARD_DRAFT_KEY, JSON.stringify({ id, businessName: businessName.trim(), logoPreview }));
+      navigate(`/generate-card?draft=${id}`);
     } catch {
       setUploadError('Your browser could not save this draft. Please allow session storage and try again.');
     }
@@ -58,7 +59,7 @@ const Hero = () => {
           </svg>
           <div className="card-hero__inner">
             <div className="card-hero__copy">
-              <div className="card-hero__eyebrow"><Sparkles size={14} aria-hidden="true" /><span>A little AI. A lasting impression.</span></div>
+              <div className="card-hero__eyebrow"><Sparkles size={14} aria-hidden="true" /><span>AI Card Maker.</span></div>
               <h1 id="hero-heading">Card-Ology<br />Card Maker<span className="card-hero__period">.</span></h1>
               <p className="card-hero__description">Your next great connection starts with a great card.<br className="desktop-break" /> Create a business card that feels uniquely you.</p>
               <form className="card-hero__form" onSubmit={handleStart}>

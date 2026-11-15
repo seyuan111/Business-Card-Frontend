@@ -39,8 +39,12 @@ export const createScene = (card = {}, templateId = 'studio') => {
   const t = templateFor(templateId);
   const elements = [];
   const shape = (id, x, y, w, h, color, kind = 'rect', opacity = 1) => elements.push({ id, type: 'shape', x, y, w, h, color, shape: kind, opacity, rotation: 0 });
-  const text = (field, content, x, y, w, size, options = {}) => elements.push({ id: field, field, type: 'text', text: String(content || ''), x, y, w, h: options.h || size * 1.65, fontSize: size, fontFamily: t.font, fontWeight: 400, color: t.ink, align: 'left', rotation: 0, opacity: 1, ...options });
-  const brand = card.businessName || card.slogan || card.name || 'YOUR STUDIO';
+  const text = (field, content, x, y, w, size, options = {}) => {
+    const value = String(content ?? '').trim();
+    if (!value) return;
+    elements.push({ id: field, field, type: 'text', text: value, x, y, w, h: options.h || size * 1.65, fontSize: size, fontFamily: t.font, fontWeight: 400, color: t.ink, align: 'left', rotation: 0, opacity: 1, ...options });
+  };
+  const brand = String(card.businessName || '').trim();
   if (t.layout === 'split') {
     shape('brand-block', 0, 0, 368, 600, t.accent);
     shape('brand-line', 423, 98, 64, 3, t.accent);
@@ -62,13 +66,13 @@ export const createScene = (card = {}, templateId = 'studio') => {
   }
   const x = t.layout === 'split' ? 425 : 65;
   const contentWidth = t.layout === 'split' ? 555 : 800;
-  text('name', card.name || 'Alex Morgan', x, 195, contentWidth, t.layout === 'split' ? 45 : 58, { fontWeight: 700, h: 90 });
-  text('occupation', card.occupation ?? 'Founder & Creative Director', x, 290, contentWidth, 23);
-  text('email', card.email ?? 'hello@yourstudio.com', x, 386, contentWidth, 21);
-  text('contact', card.contact ?? '+1 (212) 555 0148', x, 425, contentWidth, 21);
-  text('website', card.website ?? 'www.yourstudio.com', x, 464, contentWidth, 21);
+  text('name', card.name, x, 195, contentWidth, t.layout === 'split' ? 45 : 58, { fontWeight: 700, h: 90 });
+  text('occupation', card.occupation, x, 290, contentWidth, 23);
+  text('email', card.email, x, 386, contentWidth, 21);
+  text('contact', card.contact, x, 425, contentWidth, 21);
+  text('website', card.website, x, 464, contentWidth, 21);
   if (card.address) text('address', card.address, x, 510, contentWidth, 16, { h: 65 });
-  if (card.fax) text('fax', `Fax: ${card.fax}`, x, 558, contentWidth, 14, { h: 28 });
+  if (String(card.fax || '').trim()) text('fax', `Fax: ${String(card.fax).trim()}`, x, 558, contentWidth, 14, { h: 28 });
   if (card.slogan && card.slogan !== brand) text('slogan', card.slogan, t.layout === 'split' ? 40 : 650, t.layout === 'split' ? 440 : 510, t.layout === 'split' ? 290 : 325, 16, { align: 'center', color: t.layout === 'split' ? '#ffffff' : t.ink, h: 90 });
   if (isImageSource(card.logoPreview)) {
     const mark = elements.findIndex(el => el.id === 'brand-mark' || el.id === 'seal');
@@ -81,9 +85,10 @@ export const createScene = (card = {}, templateId = 'studio') => {
 export const isImageSource = (src) => typeof src === 'string' && /^data:image\/(png|jpeg|webp|gif|svg\+xml)[;,]/i.test(src);
 export const sceneFor = (card) => card?.editorScene?.version === 1 && Array.isArray(card.editorScene.elements) ? card.editorScene : createScene(card, card?.design);
 export const cardWithScene = (card, scene) => {
-  const next = { ...card, editorScene: scene, updatedAt: new Date().toISOString() };
+  const fields = ['name', 'businessName', 'occupation', 'email', 'contact', 'website', 'address', 'fax', 'slogan', 'logoPreview'];
+  const next = { ...card, ...Object.fromEntries(fields.map(field => [field, ''])), editorScene: scene, updatedAt: new Date().toISOString() };
   scene.elements.forEach(el => {
-    if (el.field && el.type === 'text') next[el.field] = el.text;
+    if (el.field && el.type === 'text') next[el.field] = el.field === 'fax' ? el.text.replace(/^Fax:\s*/i, '') : el.text;
     if (el.field === 'logoPreview' && el.type === 'image') next.logoPreview = el.src;
   });
   if (!scene.elements.some(el => el.field === 'logoPreview')) next.logoPreview = '';

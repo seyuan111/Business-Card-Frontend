@@ -1,12 +1,12 @@
 import { useEffect, useReducer, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
-import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, ArrowDown, ArrowUp, Check, ChevronDown, Copy, CreditCard, Download, Eye, ImagePlus, LayoutTemplate, MousePointer2, Palette, Plus, Printer, Redo2, Save, Shapes, Trash2, Type, Undo2, Upload, X, ZoomIn, ZoomOut } from 'lucide-react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, ArrowDown, ArrowUp, Check, ChevronDown, Copy, CreditCard, Download, Eye, ImagePlus, LayoutTemplate, MousePointer2, Palette, Plus, Redo2, Save, ShoppingCart, Shapes, Trash2, Type, Undo2, Upload, X, ZoomIn, ZoomOut } from 'lucide-react';
 import CardArtwork from '../components/studio/CardArtwork';
 import StudioDialog from '../components/studio/StudioDialog';
 import DownloadDialog from '../components/studio/DownloadDialog';
 import { CARD_HEIGHT, CARD_WIDTH, FONTS, TEMPLATES, cardWithScene, createScene, findCard, newId, readImageFile, saveCard, sceneFor, studioKey } from '../utils/cardStudio';
-import { downloadCard, printCard } from '../utils/cardExport';
+import { downloadCard } from '../utils/cardExport';
 import { readCreatedLogos } from '../utils/logos';
 import './CardStudio.css';
 
@@ -22,6 +22,7 @@ const historyReducer = (state, action) => {
 };
 
 const CardEditor = ({ id }) => {
+  const navigate = useNavigate();
   const [initial] = useState(() => {
     try {
       const card = findCard(id);
@@ -215,7 +216,17 @@ const CardEditor = ({ id }) => {
     await downloadCard(scene, format, card.businessName || card.name || 'business-card');
     setDialog(null); setStatus(`${format.toUpperCase()} downloaded. Progress saved.`); setError('');
   };
-  const print = () => { try { printCard(scene); } catch (err) { setError(err.message); } };
+  const checkout = () => {
+    setEditingId(null);
+    setError('');
+    try {
+      const card = persist();
+      localStorage.setItem('checkoutCard', JSON.stringify(card));
+      navigate('/checkout');
+    } catch {
+      setError('Checkout could not be opened. Free up browser storage or remove a large image and try again.');
+    }
+  };
 
   if (initial.error) return <div className="studio-page studio-not-found"><CreditCard size={35} /><h1>Let’s find your design.</h1><p>{initial.error}</p><Link to="/get-cards" className="studio-button studio-button--primary">Back to gallery<ArrowLeft size={16} /></Link></div>;
 
@@ -223,7 +234,7 @@ const CardEditor = ({ id }) => {
     <header className="editor-header">
       <div className="editor-header__identity"><Link to="/get-cards" className="editor-back" onClick={event => { if (dirty && !window.confirm('Leave the editor? Use Save Progress to keep your latest changes in your saved designs.')) event.preventDefault(); }}><ArrowLeft size={18} /><span>Back</span></Link><span className="editor-header__divider" /><Link to="/" className="editor-brand"><CreditCard size={22} />Ology<span>.</span></Link></div>
       <div className="editor-header__title"><strong>{record.businessName || record.name || 'Untitled business card'}</strong><span><i className={dirty ? 'is-unsaved' : ''} />{dirty ? 'Unsaved changes' : 'Saved in this browser'}</span></div>
-      <div className="editor-header__actions"><button className="studio-button editor-preview-button" onClick={() => {setEditingId(null);setDialog('preview');}}><Eye size={16} /><span>Preview</span></button><button className="studio-button studio-button--outline" onClick={save}><Save size={15} /><span>Save Progress</span></button><button className="studio-button studio-button--primary" onClick={() => {setEditingId(null);setDialog('download');}}><Download size={16} /><span>Download</span><ChevronDown size={12} /></button><button className="studio-button studio-button--outline editor-print-button" onClick={print}><Printer size={16} /><span>Print</span></button></div>
+      <div className="editor-header__actions"><button className="studio-button editor-preview-button" onClick={() => {setEditingId(null);setDialog('preview');}}><Eye size={16} /><span>Preview</span></button><button className="studio-button studio-button--outline" onClick={save}><Save size={15} /><span>Save Progress</span></button><button className="studio-button studio-button--primary" onClick={() => {setEditingId(null);setDialog('download');}}><Download size={16} /><span>Download</span><ChevronDown size={12} /></button><button className="studio-button studio-button--outline editor-checkout-button" onClick={checkout} disabled={busy}><ShoppingCart size={16} /><span>Checkout</span></button></div>
     </header>
     <div className="editor-body">
       <nav className="editor-tool-rail" aria-label="Editor tools">{tools.map(([name, Icon]) => <button key={name} type="button" className={activeTool === name && panelOpen ? 'is-active' : ''} aria-pressed={activeTool === name && panelOpen} onClick={() => {setPanelOpen(activeTool === name ? !panelOpen : true);setActiveTool(name);setEditingId(null);}}><Icon size={21} strokeWidth={1.6} /><span>{name}</span></button>)}</nav>

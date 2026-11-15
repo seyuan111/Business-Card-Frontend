@@ -346,3 +346,32 @@
   .editor-workspace__toolbar>div:first-child>span:last-child { display:none; }
 }
 @media(prefers-reduced-motion:reduce) { .template-tile__preview>.card-artwork,.template-tile__edit { transition:none; } }
+/* Three-step card creation */
+.generator-shell--wide { max-width:1370px; }
+.studio-stepper button { display:flex; align-items:center; gap:8px; color:inherit; font:inherit; }
+.studio-stepper button span { white-space:nowrap; }
+.generator-shell h1:focus { outline:none; }
+.creation-designs .template-tile { padding:6px; border:2px solid transparent; border-radius:11px; }
+.creation-designs .template-tile.is-selected { border-color:#688d75; background:#f0f5e9; }
+.creation-designs .template-tile__caption { padding:12px 4px 4px; }
+.creation-designs .template-tile__caption .studio-button { font-size:10px; padding:8px; }
+.creation-selected { position:absolute; top:10px; right:10px; display:flex; align-items:center; gap:5px; padding:6px 9px; border-radius:5px; color:#fff; background:#354e41; font-size:10px; }
+.creation-actions { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-top:32px; padding-top:22px; border-top:1px solid #e2e5df; }
+.creation-review { max-width:900px; margin:auto; }
+.creation-review h1 { margin:14px 0; font-size:38px; letter-spacing:-1.3px; font-weight:600; }
+.creation-review__art { padding:50px; margin:28px 0 18px; background:#edf0e8; border:1px solid #e2e5df; border-radius:12px; }
+.creation-review__art .card-artwork { box-shadow:0 18px 40px #374d2826; }
+.creation-review__edits { display:flex; gap:24px; margin-top:18px; }
+.creation-success { padding:14px; margin-top:20px; border:1px solid #bdcdb2; border-radius:6px; background:#edf4e7; color:#354e41; font-size:12px; line-height:1.8; }
+.creation-success a { text-decoration:underline; }
+@media(max-width:650px) {
+  .studio-stepper button { gap:5px; }
+  .creation-designs { grid-template-columns:1fr; }
+  .creation-designs .template-tile__preview { aspect-ratio:1.6; padding:30px; }
+  .creation-designs .template-tile__caption h2 { font-size:13px; }
+  .creation-designs .template-tile__caption p { font-size:10px; }
+  .creation-review h1 { font-size:30px; }
+  .creation-review__art { padding:20px; }
+  .creation-actions { gap:10px; }
+  .creation-actions .studio-button { font-size:11px; padding:11px; }
+}

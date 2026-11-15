@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Heart, Plus, Search, SlidersHorizontal, Sparkles, Trash2, Printer } from 'lucide-react';
 import NavBar from '../components/NavBar';
 import CardArtwork from '../components/studio/CardArtwork';
-import { TEMPLATES, createScene, loadCards, newId, readList, saveCard, sceneFor, studioKey, templateFor } from '../utils/cardStudio';
+import { TEMPLATES, createScene, loadCards, readList, sceneFor, studioKey, templateFor } from '../utils/cardStudio';
 import './CardStudio.css';
 
 const GetCards = () => {
@@ -15,7 +15,7 @@ const GetCards = () => {
   const [tab, setTab] = useState(searchParams.has('generated') || cards.length === 0 ? 'Templates' : 'My designs');
   const [category, setCategory] = useState('All styles');
   const [query, setQuery] = useState('');
-  const seed = cards.find(card => String(card.id) === searchParams.get('generated')) || cards[0] || {};
+
   const templateItems = TEMPLATES.filter(template => (category === 'All styles' || template.category === category) && `${template.name} ${template.category}`.toLowerCase().includes(query.toLowerCase()) && (tab !== 'Favorites' || favorites.includes(template.id)));
   const savedItems = cards.filter(card => `${card.name || ''} ${card.email || ''} ${card.businessName || ''} ${card.occupation || ''}`.toLowerCase().includes(query.toLowerCase()));
   const favorite = id => {
@@ -25,9 +25,7 @@ const GetCards = () => {
   };
   const choose = template => {
     try {
-      const card = { ...seed, id: newId(), design: template.id, editorScene: createScene(seed, template.id), createdAt: new Date().toISOString() };
-      saveCard(card);
-      navigate(`/edit-card/${card.id}`);
+      navigate(`/generate-card?design=${template.id}`);
     } catch { setError('This design could not be opened. Free some browser storage and try again.'); }
   };
   const remove = id => {
@@ -52,7 +50,7 @@ const GetCards = () => {
           <button type="button" className="template-tile__preview" onClick={() => navigate(`/edit-card/${card.id}`)} aria-label={`Edit ${card.businessName || card.name || 'untitled'} card`}><CardArtwork scene={sceneFor(card)} /><span className="template-tile__edit">Continue editing<ArrowRight size={15} /></span></button>
           <div className="template-tile__caption"><div><h2>{card.businessName || card.name || 'Untitled card'}</h2><p>{templateFor(card.design).name}</p></div><div className="template-tile__actions"><button onClick={() => checkout(card)} aria-label="Order printed cards" title="Order printed cards"><Printer size={16} /></button><button onClick={() => remove(card.id)} aria-label="Delete design" title="Delete design"><Trash2 size={16} /></button></div></div>
         </article>) : templateItems.map((template, index) => <article className={`template-tile template-tile--${template.id}`} key={template.id}>
-          <div className="template-tile__stage"><button className="template-tile__preview" type="button" onClick={() => choose(template)} aria-label={`Customize ${template.name}`}><CardArtwork scene={createScene(seed, template.id)} /><span className="template-tile__edit">Make it yours<ArrowRight size={15} /></span></button><button className={`template-favorite${favorites.includes(template.id) ? ' is-favorite' : ''}`} type="button" aria-label={`${favorites.includes(template.id) ? 'Unfavorite' : 'Favorite'} ${template.name}`} aria-pressed={favorites.includes(template.id)} onClick={() => favorite(template.id)}><Heart size={17} fill={favorites.includes(template.id) ? 'currentColor' : 'none'} /></button>{index === 0 && tab === 'Templates' && <span className="template-badge">A GOOD PLACE TO START</span>}</div>
+          <div className="template-tile__stage"><button className="template-tile__preview" type="button" onClick={() => choose(template)} aria-label={`Customize ${template.name}`}><CardArtwork scene={createScene({}, template.id)} /><span className="template-tile__edit">Make it yours<ArrowRight size={15} /></span></button><button className={`template-favorite${favorites.includes(template.id) ? ' is-favorite' : ''}`} type="button" aria-label={`${favorites.includes(template.id) ? 'Unfavorite' : 'Favorite'} ${template.name}`} aria-pressed={favorites.includes(template.id)} onClick={() => favorite(template.id)}><Heart size={17} fill={favorites.includes(template.id) ? 'currentColor' : 'none'} /></button>{index === 0 && tab === 'Templates' && <span className="template-badge">A GOOD PLACE TO START</span>}</div>
           <div className="template-tile__caption"><div><h2>{template.name}</h2><p>{template.category} · Fully customizable</p></div><button className="template-select" type="button" onClick={() => choose(template)} aria-label={`Open ${template.name}`}><ArrowRight size={17} /></button></div>
         </article>)}
       </section>
